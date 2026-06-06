@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5ec8f2"/>
+      <stop offset="1" stop-color="#7ed957"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- estrada -->
+  <rect x="176" y="40" width="160" height="432" fill="#4a4a55"/>
+  <g fill="#ffe14d">
+    <rect x="250" y="70" width="12" height="56" rx="6"/>
+    <rect x="250" y="166" width="12" height="56" rx="6"/>
+    <rect x="250" y="262" width="12" height="56" rx="6"/>
+    <rect x="250" y="358" width="12" height="56" rx="6"/>
+  </g>
+  <!-- carrinho rosa -->
+  <g transform="translate(256 300)">
+    <rect x="-66" y="-112" width="132" height="210" rx="34" fill="#000" opacity="0.18" transform="translate(8 10)"/>
+    <rect x="-66" y="-112" width="132" height="210" rx="34" fill="#ff5d8f"/>
+    <rect x="-44" y="-54" width="88" height="86" rx="22" fill="#d63b6e"/>
+    <rect x="-40" y="-92" width="80" height="34" rx="14" fill="#bfeaff"/>
+    <rect x="-78" y="-72" width="20" height="46" rx="6" fill="#222"/>
+    <rect x="58" y="-72" width="20" height="46" rx="6" fill="#222"/>
+    <rect x="-78" y="40" width="20" height="46" rx="6" fill="#222"/>
+    <rect x="58" y="40" width="20" height="46" rx="6" fill="#222"/>
+  </g>
+  <!-- estrelinha -->
+  <path transform="translate(110 120) scale(1.1)" fill="#ffd23f" stroke="#e0ac00" stroke-width="6" stroke-linejoin="round"
+    d="M0,-46 L13,-15 L46,-15 L19,7 L29,40 L0,20 L-29,40 L-19,7 L-46,-15 L-13,-15 Z"/>
+</svg>
