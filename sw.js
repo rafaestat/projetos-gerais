@@ -1,5 +1,6 @@
-/* Service Worker — permite jogar offline depois de abrir uma vez */
-const CACHE = "corrida-lara-v3";
+/* Service Worker — "rede primeiro": sempre busca a versao mais nova quando
+   tem internet, e usa a copia guardada so quando estiver offline. */
+const CACHE = "corrida-lara-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,7 +25,14 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
   e.respondWith(
-    caches.match(e.request).then((r) => r || fetch(e.request))
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
