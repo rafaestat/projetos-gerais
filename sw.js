@@ -1,5 +1,5 @@
 /* Service Worker — permite jogar offline depois de abrir uma vez */
-const CACHE = "corrida-lara-v2";
+const CACHE = "corrida-lara-v3";
 const ASSETS = [
   "./",
   "./index.html",

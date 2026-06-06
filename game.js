@@ -248,6 +248,9 @@
     ctx.fillStyle = "#7ed957";
     ctx.fillRect(-20, 0, W + 40, H);
 
+    // se o cenario ainda nao foi criado, mostra so o fundo
+    if (!road) { ctx.restore(); return; }
+
     // estrada
     drawRoad();
 
@@ -445,5 +448,6 @@
   againBtn.addEventListener("click", startGame);
 
   buildCarPicker();
+  resetGame();            // cria o cenario ja no inicio (evita tela travada)
   requestAnimationFrame(loop);
 })();
