@@ -1,7 +1,7 @@
 {
-  "name": "Corrida da Princesa",
-  "short_name": "Carrinho",
-  "description": "Jogo de carrinho divertido para crianças. Pegue as estrelinhas e desvie dos carros!",
+  "name": "Corrida da Lara",
+  "short_name": "Lara",
+  "description": "Jogo de carrinho da Lara! Pegue as estrelinhas e desvie dos carros!",
   "lang": "pt-BR",
   "start_url": "./index.html",
   "scope": "./",

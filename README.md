@@ -1,6 +1,6 @@
-# 🚗 Corrida da Princesa
+# 🚗 Corrida da Lara
 
-Um joguinho de carrinho simples e colorido, feito para crianças pequenas (a partir de uns 3–5 anos) jogarem no celular Android.
+Um joguinho de carrinho simples e colorido, feito especialmente para a **Lara** (e outras crianças pequenas, a partir de uns 3–5 anos) jogarem no celular Android.
 
 ## Como se joga
 

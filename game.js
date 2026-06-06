@@ -1,5 +1,5 @@
 /* ====================================================================
-   Corrida da Princesa — jogo de carrinho para crianças (5 anos)
+   Corrida da Lara — jogo de carrinho para crianças (5 anos)
    Controle: arraste o dedo (ou o mouse) para guiar o carrinho.
    Pegue as estrelinhas ⭐ e desvie dos outros carros 🚗
    ==================================================================== */
@@ -436,7 +436,7 @@
   function endGame() {
     state = STATE.OVER;
     hud.classList.add("hidden");
-    overTitle.textContent = score >= 10 ? "Uauu! Incrível! 🏆" : "Muito bem! 🎉";
+    overTitle.textContent = score >= 10 ? "Uauu! Incrível, Lara! 🏆" : "Muito bem, Lara! 🎉";
     overScore.textContent = "Você pegou " + score + " estrelinha" + (score === 1 ? "" : "s") + "! ⭐";
     overScreen.classList.remove("hidden");
   }
