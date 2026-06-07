@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a120b" />
+  <title>Ateliê Essenzia — O Simulador Tátil de ASMR</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Tela inicial: convite suave para usar fones de ouvido -->
+  <div id="intro" class="overlay">
+    <div class="intro-inner">
+      <div class="brand">
+        <span class="brand-mark">✦</span>
+        <h1>Ateliê Essenzia</h1>
+        <p class="subtitle">O Simulador Tátil de ASMR</p>
+      </div>
+      <p class="intro-text">
+        Um espaço sem pressa. Sem relógios, sem metas, sem erros.<br />
+        Apenas o prazer de criar com as mãos.
+      </p>
+      <p class="intro-hint">Use fones de ouvido para a imersão completa.</p>
+      <button id="beginBtn" class="begin-btn">Entrar no ateliê</button>
+    </div>
+  </div>
+
+  <!-- Canvas principal onde tudo acontece -->
+  <canvas id="stage"></canvas>
+
+  <!-- UI mínima que some durante a criação -->
+  <button id="backBtn" class="back-btn" aria-label="Voltar ao ateliê">‹ ateliê</button>
+
+  <div id="hint" class="hint"></div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/stations.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

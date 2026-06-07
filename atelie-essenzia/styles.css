@@ -1,0 +1,157 @@
+/* Ateliê Essenzia — estética quente, cinematográfica, UI que desaparece */
+
+:root {
+  --warm-bg: #1a120b;
+  --warm-glow: #3a2616;
+  --ember: #e8a05a;
+  --cream: #f3e7d3;
+  --soft: rgba(243, 231, 211, 0.7);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--warm-bg);
+  color: var(--cream);
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  cursor: default;
+  user-select: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* ---- Tela de entrada ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 40%, #2a1c10 0%, #140d07 70%, #0b0703 100%);
+  transition: opacity 1.4s ease;
+}
+.overlay.hidden { opacity: 0; pointer-events: none; }
+
+.intro-inner {
+  text-align: center;
+  max-width: 540px;
+  padding: 2rem;
+  animation: rise 1.6s ease both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.brand-mark {
+  display: block;
+  font-size: 2rem;
+  color: var(--ember);
+  margin-bottom: 0.4rem;
+  text-shadow: 0 0 24px rgba(232, 160, 90, 0.6);
+}
+
+.brand h1 {
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-shadow: 0 0 40px rgba(232, 160, 90, 0.25);
+}
+
+.subtitle {
+  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--soft);
+  margin-top: 0.8rem;
+}
+
+.intro-text {
+  margin: 2.4rem 0 1rem;
+  font-size: clamp(1.1rem, 2.6vw, 1.4rem);
+  line-height: 1.7;
+  color: var(--cream);
+}
+
+.intro-hint {
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  color: var(--soft);
+  font-style: italic;
+}
+
+.begin-btn {
+  margin-top: 2.6rem;
+  padding: 0.95rem 2.6rem;
+  font-family: inherit;
+  font-size: 1.15rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--warm-bg);
+  background: linear-gradient(180deg, #f0c089, #e0934f);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 10px 40px rgba(224, 147, 79, 0.35), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+.begin-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 50px rgba(224, 147, 79, 0.5);
+}
+.begin-btn:active { transform: translateY(0); }
+
+/* ---- UI mínima ---- */
+.back-btn {
+  position: fixed;
+  top: 1.4rem;
+  left: 1.6rem;
+  z-index: 15;
+  font-family: inherit;
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+  color: var(--soft);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease, color 0.3s ease;
+}
+.back-btn.show { opacity: 0.55; pointer-events: auto; }
+.back-btn.show:hover { opacity: 1; color: var(--cream); }
+
+.hint {
+  position: fixed;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  color: var(--soft);
+  font-style: italic;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.6);
+  max-width: 90vw;
+}
+.hint.show { opacity: 0.75; }
