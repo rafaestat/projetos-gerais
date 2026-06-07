@@ -34,7 +34,7 @@ jobs:
         with:
           enablement: true
 
-      - name: Enviar artefato (raiz: carrinho + atelie/)
+      - name: Enviar artefato da raiz (carrinho + atelie)
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
