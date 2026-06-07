@@ -1,0 +1,42 @@
+name: Deploy Ateliê Essenzia
+
+# Publica o jogo (pasta atelie-essenzia/) no GitHub Pages como raiz do site.
+on:
+  push:
+    branches:
+      - claude/atelie-essenzia-asmr-FbS4A
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Garante um deploy por vez
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Enviar artefato (somente o jogo)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: atelie-essenzia
+
+      - name: Publicar no Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
