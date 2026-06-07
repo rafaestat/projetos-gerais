@@ -1,6 +1,8 @@
-name: Deploy Ateliê Essenzia
+name: Deploy dos jogos
 
-# Publica o jogo (pasta atelie-essenzia/) no GitHub Pages como raiz do site.
+# Publica os dois jogos no GitHub Pages a partir da raiz do repositório:
+#   - Carrinho da Lara  -> raiz (/)
+#   - Ateliê Essenzia   -> /atelie/
 on:
   push:
     branches:
@@ -32,10 +34,10 @@ jobs:
         with:
           enablement: true
 
-      - name: Enviar artefato (somente o jogo)
+      - name: Enviar artefato (raiz: carrinho + atelie/)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: atelie-essenzia
+          path: .
 
       - name: Publicar no Pages
         id: deployment

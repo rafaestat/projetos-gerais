@@ -1,0 +1,20 @@
+{
+  "name": "Corrida da Lara",
+  "short_name": "Lara",
+  "description": "Jogo de carrinho da Lara! Pegue as estrelinhas e desvie dos carros!",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#5ec8f2",
+  "theme_color": "#5ec8f2",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
