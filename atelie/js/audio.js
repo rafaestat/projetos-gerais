@@ -143,15 +143,30 @@ const ASMR = (() => {
     const g = ctx.createGain();
     g.gain.value = 0;
 
+    // camada de "grão" cristalino: ruído agudo que aparece com a velocidade,
+    // dando aquele detalhe nítido e orgânico tão característico do ASMR
+    const src2 = ctx.createBufferSource();
+    src2.buffer = noiseBuffer();
+    src2.loop = true;
+    src2.playbackRate.value = 1.4;
+    const grain = ctx.createBiquadFilter();
+    grain.type = "bandpass";
+    grain.frequency.value = Math.max(2200, freq * 1.6);
+    grain.Q.value = 1.4;
+    const g2 = ctx.createGain();
+    g2.gain.value = 0;
+
     const pan = panner();
 
     const send = ctx.createGain();
     send.gain.value = reverbSend;
 
     src.connect(filter).connect(g).connect(pan);
+    src2.connect(grain).connect(g2).connect(pan);
     pan.connect(master);
     pan.connect(send).connect(reverb);
     src.start();
+    src2.start();
 
     let alive = true;
     return {
@@ -161,7 +176,9 @@ const ASMR = (() => {
         if (pan.pan) pan.pan.setTargetAtTime((x - 0.5) * 1.7, t, 0.04);
         const target = Math.max(0, Math.min(max, intensity * max));
         g.gain.setTargetAtTime(target, t, 0.03);
-        // brilho acompanha a intensidade — movimentos rápidos soam mais "crispy"
+        // o grão cresce mais que linearmente com a intensidade => fica "crispy"
+        g2.gain.setTargetAtTime(Math.min(max * 0.5, intensity * intensity * max * 0.7), t, 0.03);
+        // brilho acompanha a intensidade — movimentos rápidos soam mais nítidos
         filter.frequency.setTargetAtTime(freq * (1 + intensity * color), t, 0.05);
       },
       stop() {
@@ -169,7 +186,8 @@ const ASMR = (() => {
         alive = false;
         const t = ctx.currentTime;
         g.gain.setTargetAtTime(0, t, 0.08);
-        setTimeout(() => { try { src.stop(); } catch (e) {} }, 400);
+        g2.gain.setTargetAtTime(0, t, 0.08);
+        setTimeout(() => { try { src.stop(); src2.stop(); } catch (e) {} }, 400);
       },
     };
   }
@@ -242,12 +260,16 @@ const ASMR = (() => {
     src.stop(t + 0.1);
   }
 
-  // estalido de papel / crepitar — vários micro-estalos
+  // estalido de papel / crepitar — muitos micro-estalos crocantes e irregulares
   function crinkle(x = 0.5, amount = 1) {
     ensure();
-    const n = 3 + Math.floor(Math.random() * 4 * amount);
+    const n = 5 + Math.floor(Math.random() * 7 * amount);
+    let delay = 0;
     for (let i = 0; i < n; i++) {
-      setTimeout(() => click(x + (Math.random() - 0.5) * 0.1, 1.4 + Math.random()), i * 22 * Math.random());
+      // intervalos irregulares e tons variados = textura orgânica e "crispy"
+      delay += 8 + Math.random() * 34;
+      const pitch = 1.6 + Math.random() * 2.2;
+      setTimeout(() => click(x + (Math.random() - 0.5) * 0.12, pitch), delay);
     }
   }
 

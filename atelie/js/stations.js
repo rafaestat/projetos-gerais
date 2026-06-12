@@ -693,6 +693,15 @@
       const prog = this.complete ? 1 : (this.step + (this.step === 0 ? this.fill : this.step === 1 ? this.swirl : this.step === 2 ? this.essence / 5 : this.cuts / 3)) / 4;
       progressRing(ctx, W, H, prog);
     },
+    overlay(ctx, W, H, t) {
+      if (Engine.pointer.down || this.complete) return;
+      const g = this.geom(W, H);
+      const cx = g.mx + g.mw / 2, cy = g.my + g.mh / 2;
+      if (this.step === 0 && this.fill < 0.05) guideHand(ctx, cx, g.my - 4, t, "segure", true);
+      else if (this.step === 1 && this.swirl < 0.05) guideHand(ctx, cx + Math.cos(t * 2) * g.mw * 0.18, cy + Math.sin(t * 2) * g.mh * 0.25, t, "gire");
+      else if (this.step === 2 && this.essence < 1) guideHand(ctx, cx + Math.sin(t * 2) * 40, cy, t, "toque", true);
+      else if (this.step === 3 && this.cuts < 1) { const k = (Math.sin(t * 1.6) + 1) / 2; guideHand(ctx, g.mx + 24 + k * (g.mw - 48), cy, t, "deslize"); }
+    },
   });
 
   /* =====================================================================
@@ -762,6 +771,12 @@
       ctx.restore();
       progressRing(ctx, W, H, this.cut);
     },
+    overlay(ctx, W, H, t) {
+      if (Engine.pointer.down || this.done || this.cut > 0.05) return;
+      const g = this.geom(W, H);
+      const k = (Math.sin(t * 1.6) + 1) / 2;
+      guideHand(ctx, this.guideX, g.y + 18 + k * 44, t, "siga ↓");
+    },
   });
 
   /* =====================================================================
@@ -828,6 +843,11 @@
       }
       ctx.restore();
       progressRing(ctx, W, H, this.smooth);
+    },
+    overlay(ctx, W, H, t) {
+      if (Engine.pointer.down || this.done || this.smooth > 0.05) return;
+      const g = this.geom(W, H);
+      guideHand(ctx, g.x + g.w / 2 + Math.sin(t * 3) * g.w * 0.35, g.y + g.h / 2, t, "↔");
     },
   });
 
@@ -920,6 +940,12 @@
       }
       progressRing(ctx, W, H, this.done ? 1 : (this.step + (this.step === 0 ? this.puddle : this.pressT)) / 2);
     },
+    overlay(ctx, W, H, t) {
+      if (Engine.pointer.down || this.done) return;
+      const c = this.center(W, H);
+      if (this.step === 0 && this.puddle < 0.05) guideHand(ctx, c.x, c.y, t, "segure", true);
+      else if (this.step === 1 && this.pressT < 0.05) guideHand(ctx, c.x, c.y - 30, t, "pressione", true);
+    },
   });
 
   /* =====================================================================
@@ -931,6 +957,7 @@
       this.jars = this.palette.map((c, i) => ({ col: c, count: 0 }));
       this.beads = [];
       this.held = null;
+      this.sorted = 0;
       for (let i = 0; i < 14; i++) this.spawnBead(W, H);
       hint("Leve cada miçanga ao potinho da sua cor. Sem pressa.");
     },
@@ -970,6 +997,7 @@
         b.target = g;
         b.dropping = true;
         this.jars[b.ci].count++;
+        this.sorted++;
         ASMR.click(Engine.pointer.x, 0.7 + b.ci * 0.1);
         setTimeout(() => {
           const idx = this.beads.indexOf(b);
@@ -1024,6 +1052,15 @@
         ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.3, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
+    },
+    overlay(ctx, W, H, t) {
+      // demonstra arrastar a primeira miçanga até o pote da cor dela
+      if (Engine.pointer.down || this.held || this.sorted > 0) return;
+      const b = this.beads.find(b => !b.dropping);
+      if (!b) return;
+      const g = this.jarGeom(W, H, b.ci);
+      const k = (Math.sin(t * 1.4) + 1) / 2;
+      guideHand(ctx, lerp(b.x, g.x + g.w / 2, k), lerp(b.y, g.y + 30, k), t, "arraste");
     },
   });
 
@@ -1174,6 +1211,24 @@
       else if (this.step === 1) prog = 0.25 + (this.flaps.reduce((a, b) => a + b, 0) / 4) * 0.5;
       else prog = 0.75 + this.ribbon * 0.25;
       progressRing(ctx, W, H, prog);
+    },
+    overlay(ctx, W, H, t) {
+      if (Engine.pointer.down || this.done) return;
+      const b = this.box(W, H);
+      const c = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      if (this.step === 0 && !this.item.placed) {
+        const k = (Math.sin(t * 1.5) + 1) / 2;
+        guideHand(ctx, lerp(this.item.x, c.x, k), lerp(this.item.y, c.y, k), t, "arraste");
+      } else if (this.step === 1) {
+        const idx = this.flaps.findIndex(f => f < 0.85);
+        if (idx < 0) return;
+        const pts = [{ x: b.x, y: c.y }, { x: b.x + b.w, y: c.y }, { x: c.x, y: b.y }, { x: c.x, y: b.y + b.h }];
+        const k = (Math.sin(t * 1.6) + 1) / 2;
+        guideHand(ctx, lerp(pts[idx].x, c.x, k * 0.7), lerp(pts[idx].y, c.y, k * 0.7), t, "dobre");
+      } else if (this.step === 2 && this.ribbon < 0.05) {
+        const k = (Math.sin(t * 1.6) + 1) / 2;
+        guideHand(ctx, b.x + k * b.w, c.y, t, "deslize");
+      }
     },
   });
 })();
