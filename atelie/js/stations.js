@@ -238,33 +238,58 @@
   /* =====================================================================
    *  VELAS ARTESANAIS
    * ===================================================================== */
+  const VELA_AROMAS = [
+    { nome: "Lavanda", cor: "#b9a3d6" },
+    { nome: "Rosa", cor: "#e3a7bd" },
+    { nome: "Baunilha", cor: "#e8c98a" },
+    { nome: "Mel & Âmbar", cor: "#e0a05a" },
+  ];
+
   Engine.register("velas", {
     enter(W, H) {
       this.step = 0;
       this.melt = 0;
       this.fill = 0;
-      this.wick = { x: W * 0.5, y: H * 0.32, placed: false };
       this.petals = 0;
       this.voice = null;
       this.complete = false;
       this.flame = 0;
-      this.scent = ["#e8a05a", "#d98fa8", "#c08a50"][Math.floor(rand(0, 3))];
-      hint("Derreta a cera — deslize sobre o caldeirão, sem pressa.");
+      this.acted = false; // o usuário já fez o gesto deste passo? (esconde a mãozinha-guia)
+      const a = VELA_AROMAS[Math.floor(rand(0, VELA_AROMAS.length))];
+      this.aroma = a.nome;
+      this.scent = a.cor;
+      const g = this.geom(W, H);
+      this.wick = { x: g.jar.x + g.jar.w + 70, y: g.jar.y + g.jar.h * 0.5, placed: false, drag: false };
+      this.stepHint();
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     geom(W, H) {
-      return { mx: W / 2 - 80, my: H * 0.45, mw: 160, mh: 200 };
+      const jw = Math.min(150, W * 0.26), jh = jw * 1.35;
+      const jx = W / 2 - jw / 2, jy = H * 0.40;
+      const pw = jw * 1.25, ph = pw * 0.62;
+      const px0 = W / 2 - pw / 2, py0 = H * 0.14;
+      return {
+        pot: { x: px0, y: py0, w: pw, h: ph },
+        jar: { x: jx, y: jy, w: jw, h: jh },
+      };
+    },
+    stepHint() {
+      const msgs = [
+        "Passo 1 de 4 · Derreta a cera — deslize para os lados sobre a panela.",
+        "Passo 2 de 4 · Despeje — segure o dedo sobre o pote de vidro.",
+        "Passo 3 de 4 · Pavio — arraste o pavio até o centro do pote.",
+        "Passo 4 de 4 · Perfume — toque a superfície para soltar pétalas.",
+      ];
+      hint(msgs[this.step]);
     },
     onDown() {
-      const g = this.geom(Engine.W, Engine.H);
       if (this.complete) { this.enter(Engine.W, Engine.H); return; }
       if (this.step === 0) {
-        this.voice = ASMR.voice({ type: "lowpass", freq: 600, max: 0.4, color: 1.5 });
+        this.voice = ASMR.voice({ type: "lowpass", freq: 620, max: 0.4, color: 1.5 });
       } else if (this.step === 1) {
         this.voice = ASMR.voice({ type: "bandpass", freq: 900, q: 1.2, max: 0.45, color: 0.6 });
       } else if (this.step === 2) {
-        // pega o pavio se tocar perto
-        if (dist(px(), py(), this.wick.x, this.wick.y) < 80) this.wick.drag = true;
+        if (dist(px(), py(), this.wick.x, this.wick.y) < 90) { this.wick.drag = true; this.acted = true; }
       } else if (this.step === 3) {
         this.sprinkle();
       }
@@ -277,109 +302,274 @@
       const g = this.geom(Engine.W, Engine.H);
       if (this.step === 2 && this.wick.drag) {
         this.wick.drag = false;
-        const cx = g.mx + g.mw / 2, cy = g.my + 20;
-        if (dist(this.wick.x, this.wick.y, cx, cy) < 60) {
+        const cx = g.jar.x + g.jar.w / 2, cy = g.jar.y + 22;
+        if (dist(this.wick.x, this.wick.y, cx, cy) < 70) {
           this.wick.x = cx; this.wick.y = cy; this.wick.placed = true;
           ASMR.click(Engine.pointer.x, 0.9);
-          this.step = 3;
-          hint("Perfume com pétalas — toque a superfície da cera.");
+          this.step = 3; this.acted = false; this.stepHint();
+        } else {
+          // volta com gentileza para a posição inicial (sem punição)
+          this.wick.x = g.jar.x + g.jar.w + 70; this.wick.y = g.jar.y + g.jar.h * 0.5;
         }
       }
     },
     sprinkle() {
+      this.acted = true;
       const g = this.geom(Engine.W, Engine.H);
       ASMR.crinkle(Engine.pointer.x, 0.6);
+      const cores = ["#e3a7bd", "#e8c98a", "#b9a3d6", "#c0d98f"];
       for (let i = 0; i < 6; i++) {
         Engine.spawn({
           x: px() + rand(-20, 20), y: py(),
-          vx: rand(-20, 20), vy: rand(20, 60), gravity: 200, drag: 0.98,
-          life: rand(1.2, 2), size: rand(3, 6),
-          color: ["#d98fa8", "#e8c07a", "#c0d98f"][Math.floor(rand(0, 3))],
+          vx: rand(-22, 22), vy: rand(20, 60), gravity: 200, drag: 0.98,
+          life: rand(1.4, 2.2), size: rand(4, 8),
+          color: cores[Math.floor(rand(0, cores.length))],
           shape: "rect", rot: rand(0, 6), vrot: rand(-3, 3),
         });
       }
       this.petals++;
       if (this.petals >= 7 && !this.complete) {
         this.complete = true;
-        done("Sua vela está pronta.");
+        done("Sua vela de " + this.aroma + " está pronta.");
       }
     },
     update(dt, p, t) {
       const g = this.geom(Engine.W, Engine.H);
       if (this.step === 0 && p.down && this.voice) {
-        const inPot = px() > g.mx - 30 && px() < g.mx + g.mw + 30 && py() > g.my - 30 && py() < g.my + g.mh;
+        const pot = g.pot;
+        const inPot = px() > pot.x - 30 && px() < pot.x + pot.w + 30 && py() > pot.y - 20 && py() < pot.y + pot.h + 40;
         const intensity = inPot ? clamp(p.speed * 1.4, 0, 1) : 0;
         this.voice.update(p.x, intensity * 0.7);
-        if (inPot) {
+        if (inPot && p.speed > 0.05) {
+          this.acted = true;
           this.melt = clamp(this.melt + p.speed * dt * 0.5, 0, 1);
           if (Math.random() < p.speed * dt * 2) ASMR.bubble(p.x);
         }
-        if (this.melt >= 1) { this.step = 1; this.fill = 0; hint("Despeje a cera na forma — segure sobre o molde."); }
+        if (this.melt >= 1) { this.step = 1; this.fill = 0; this.acted = false; this.stepHint(); }
       }
-      if (this.step === 1) {
-        if (p.down && this.voice) {
-          this.voice.update(p.x, 0.7);
-          this.fill = clamp(this.fill + dt * 0.28, 0, 1);
-          // fio de cera escorrendo
-          Engine.spawn({
-            x: g.mx + g.mw / 2 + rand(-8, 8), y: g.my - 40,
-            vx: 0, vy: rand(160, 260), gravity: 120, drag: 1,
-            life: 0.5, size: rand(2.5, 4.5), color: this.scent, glow: 6,
-          });
-          if (this.fill >= 1) { this.step = 2; hint("Posicione o pavio no centro da vela."); }
-        }
+      if (this.step === 1 && p.down && this.voice) {
+        this.acted = true;
+        this.voice.update(p.x, 0.7);
+        this.fill = clamp(this.fill + dt * 0.28, 0, 1);
+        // fio de cera escorrendo do bico da panela até o pote
+        const sx = g.pot.x + g.pot.w / 2;
+        Engine.spawn({
+          x: sx + rand(-5, 5), y: g.pot.y + g.pot.h,
+          vx: 0, vy: rand(220, 320), gravity: 120, drag: 1,
+          life: 0.6, size: rand(3, 5), color: this.scent, glow: 6,
+        });
+        if (this.fill >= 1) { this.step = 2; this.acted = false; this.stepHint(); }
       }
       if (this.complete) this.flame = clamp(this.flame + dt * 1.2, 0, 1);
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
-      // superfície / bancada
-      // caldeirão de derreter (passo 0)
-      const meltColor = shade(this.scent, -0.1);
-      if (this.step === 0) {
-        drawMold(ctx, g.mx, g.my, g.mw, g.mh, 0.6, lerp01Color("#b8915f", this.scent, this.melt), false);
-        // pedaços sólidos diminuindo conforme derrete
+      const wax = this.scent;
+
+      // ---- panela de cera (sempre visível; é a fonte) ----
+      drawCauldron(ctx, g.pot, this.step === 0 ? this.melt : 1, wax);
+
+      // ---- jorro de cera ao despejar ----
+      if (this.step === 1) {
+        const sx = g.pot.x + g.pot.w / 2;
         ctx.save();
-        roundRect(ctx, g.mx, g.my, g.mw, g.mh, 10); ctx.clip();
-        const chunks = Math.round((1 - this.melt) * 6);
-        ctx.fillStyle = "#d8b483";
-        for (let i = 0; i < chunks; i++) {
-          const cx = g.mx + 30 + (i % 3) * 50, cy = g.my + g.mh - 40 - Math.floor(i / 3) * 36;
-          roundRect(ctx, cx, cy, 36, 28, 6); ctx.fill();
-        }
+        ctx.strokeStyle = wax; ctx.globalAlpha = 0.85; ctx.lineWidth = 6; ctx.lineCap = "round";
+        ctx.shadowColor = wax; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.moveTo(sx, g.pot.y + g.pot.h - 6); ctx.lineTo(sx, g.jar.y + 12); ctx.stroke();
         ctx.restore();
-      } else {
-        drawMold(ctx, g.mx, g.my, g.mw, g.mh, this.fill, this.scent, true);
       }
-      // pavio
+
+      // ---- pote de vidro (a vela) ----
+      drawGlassJar(ctx, g.jar, this.step >= 1 ? this.fill : 0, wax);
+
+      // ---- pavio ----
       if (this.step >= 2) {
-        const cx = g.mx + g.mw / 2, cy = this.wick.placed ? g.my + 20 : this.wick.y;
-        const wx = this.wick.placed ? cx : this.wick.x;
-        ctx.save();
-        ctx.strokeStyle = "#3a2a1a"; ctx.lineWidth = 3; ctx.lineCap = "round";
-        ctx.beginPath(); ctx.moveTo(wx, cy); ctx.lineTo(wx, cy + 60); ctx.stroke();
-        ctx.restore();
+        const placed = this.wick.placed;
+        const wx = placed ? g.jar.x + g.jar.w / 2 : this.wick.x;
+        const wy = placed ? g.jar.y + 22 : this.wick.y;
+        drawWick(ctx, wx, wy, placed ? g.jar.h * this.fill - 30 : 70, this.wick.drag);
       }
-      // chama ao concluir
+
+      // ---- chama acesa ao concluir ----
       if (this.complete && this.flame > 0) {
-        const cx = g.mx + g.mw / 2, cy = g.my + 18;
-        const fl = this.flame * (0.9 + 0.1 * Math.sin(t * 12));
-        const grd = ctx.createRadialGradient(cx, cy - 8, 0, cx, cy - 8, 60 * fl);
-        grd.addColorStop(0, "rgba(255,220,140,0.9)");
-        grd.addColorStop(0.5, "rgba(255,150,60,0.4)");
-        grd.addColorStop(1, "rgba(255,120,40,0)");
-        ctx.fillStyle = grd;
-        ctx.beginPath(); ctx.arc(cx, cy - 8, 60 * fl, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#ffe6a0";
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 22 * fl);
-        ctx.quadraticCurveTo(cx + 8 * fl, cy - 6, cx, cy + 4);
-        ctx.quadraticCurveTo(cx - 8 * fl, cy - 6, cx, cy - 22 * fl);
-        ctx.fill();
+        const cx = g.jar.x + g.jar.w / 2, cy = g.jar.y + 20;
+        drawFlame(ctx, cx, cy, this.flame, t);
       }
+
+      // rótulo do aroma
+      Engine.text("vela de " + this.aroma, g.jar.x + g.jar.w / 2, g.jar.y + g.jar.h + 30, {
+        size: 17, color: "rgba(243,231,211,0.45)", letter: 1,
+      });
+
       progressRing(ctx, W, H, this.complete ? 1 : (this.step + (this.step === 0 ? this.melt : this.step === 1 ? this.fill : 0)) / 4);
     },
+    overlay(ctx, W, H, t) {
+      if (this.complete || this.acted) return;
+      const g = this.geom(W, H);
+      // mãozinha-guia: demonstra o gesto do passo atual
+      if (this.step === 0) {
+        const cx = g.pot.x + g.pot.w / 2, cy = g.pot.y + g.pot.h * 0.5;
+        const x = cx + Math.sin(t * 3) * g.pot.w * 0.32;
+        guideHand(ctx, x, cy, t, "↔");
+      } else if (this.step === 1) {
+        const cx = g.jar.x + g.jar.w / 2, cy = g.jar.y + 30;
+        guideHand(ctx, cx, cy, t, "segure", true);
+      } else if (this.step === 2) {
+        const cx = g.jar.x + g.jar.w / 2, cy = g.jar.y + 22;
+        const k = (Math.sin(t * 1.6) + 1) / 2;
+        const x = lerp(this.wick.x, cx, k), y = lerp(this.wick.y, cy, k);
+        guideHand(ctx, x, y, t, "arraste");
+      } else if (this.step === 3) {
+        const cx = g.jar.x + g.jar.w / 2 + Math.sin(t * 2) * g.jar.w * 0.25;
+        guideHand(ctx, cx, g.jar.y + 34, t, "toque", true);
+      }
+    },
   });
+
+  /* ---- arte vetorial da estação de velas ---- */
+  function drawCauldron(ctx, r, melt, wax) {
+    const cx = r.x + r.w / 2;
+    ctx.save();
+    // corpo da panela (metal escuro com brilho)
+    const body = ctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+    body.addColorStop(0, "#4a4138");
+    body.addColorStop(1, "#241f1a");
+    ctx.fillStyle = body;
+    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 12;
+    roundRect(ctx, r.x, r.y, r.w, r.h, 16);
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    // conteúdo: cera derretendo
+    ctx.save();
+    roundRect(ctx, r.x + 6, r.y + 6, r.w - 12, r.h - 12, 12); ctx.clip();
+    // poça líquida ao fundo
+    const liq = ctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+    liq.addColorStop(0, lerp01Color("#7a6a55", wax, melt));
+    liq.addColorStop(1, shade(lerp01Color("#7a6a55", wax, melt), -0.25));
+    ctx.fillStyle = liq;
+    ctx.fillRect(r.x, r.y + 6, r.w, r.h);
+    // pedaços sólidos que somem ao derreter
+    const chunks = Math.round((1 - melt) * 5);
+    for (let i = 0; i < chunks; i++) {
+      ctx.save();
+      ctx.translate(r.x + 30 + (i % 3) * (r.w - 60) / 2, r.y + r.h - 30 - Math.floor(i / 3) * 30);
+      ctx.rotate((i * 1.3) % 1 - 0.5);
+      const cg = ctx.createLinearGradient(-18, -14, 18, 14);
+      cg.addColorStop(0, "#efe0c4"); cg.addColorStop(1, "#d8c3a0");
+      ctx.fillStyle = cg;
+      roundRect(ctx, -18, -14, 36, 28, 7); ctx.fill();
+      ctx.restore();
+    }
+    // brilho na superfície líquida
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fillRect(r.x, r.y + 6, r.w, 4);
+    ctx.restore();
+    // borda/aro da panela
+    ctx.strokeStyle = "#6a5d4e"; ctx.lineWidth = 4;
+    roundRect(ctx, r.x, r.y, r.w, r.h, 16); ctx.stroke();
+    // alças laterais
+    ctx.lineWidth = 6; ctx.strokeStyle = "#3a322a";
+    ctx.beginPath(); ctx.arc(r.x, r.y + r.h * 0.3, 14, Math.PI * 0.4, Math.PI * 1.6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(r.x + r.w, r.y + r.h * 0.3, 14, -Math.PI * 0.6, Math.PI * 0.6); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGlassJar(ctx, r, fill, wax) {
+    ctx.save();
+    // sombra
+    ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = 26; ctx.shadowOffsetY = 14;
+    // vidro de fundo
+    ctx.fillStyle = "rgba(243,231,211,0.06)";
+    roundRect(ctx, r.x, r.y, r.w, r.h, 18); ctx.fill();
+    ctx.shadowColor = "transparent";
+    // cera dentro
+    const fh = (r.h - 16) * clamp(fill, 0, 1);
+    if (fh > 1) {
+      ctx.save();
+      roundRect(ctx, r.x + 6, r.y + 8, r.w - 12, r.h - 16, 12); ctx.clip();
+      const wg = ctx.createLinearGradient(0, r.y + r.h - fh, 0, r.y + r.h);
+      wg.addColorStop(0, shade(wax, 0.12));
+      wg.addColorStop(1, shade(wax, -0.22));
+      ctx.fillStyle = wg;
+      ctx.fillRect(r.x + 6, r.y + r.h - 8 - fh, r.w - 12, fh);
+      // menisco brilhante na superfície
+      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      ctx.fillRect(r.x + 6, r.y + r.h - 8 - fh, r.w - 12, 3);
+      ctx.restore();
+    }
+    // paredes de vidro com reflexos
+    ctx.strokeStyle = "rgba(243,231,211,0.35)"; ctx.lineWidth = 2.5;
+    roundRect(ctx, r.x, r.y, r.w, r.h, 18); ctx.stroke();
+    // reflexo vertical suave
+    const sh = ctx.createLinearGradient(r.x, 0, r.x + r.w, 0);
+    sh.addColorStop(0, "rgba(255,255,255,0.18)");
+    sh.addColorStop(0.18, "rgba(255,255,255,0.02)");
+    sh.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = sh;
+    roundRect(ctx, r.x + 4, r.y + 6, r.w - 8, r.h - 12, 14); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWick(ctx, x, yTop, len, lifted) {
+    ctx.save();
+    if (lifted) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 12; }
+    // pavio
+    ctx.strokeStyle = "#4a3320"; ctx.lineWidth = 3.5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x, yTop); ctx.lineTo(x, yTop + Math.max(20, len)); ctx.stroke();
+    // base metálica
+    ctx.fillStyle = "#c9b48a";
+    ctx.beginPath(); ctx.ellipse(x, yTop + Math.max(20, len), 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFlame(ctx, cx, cy, f, t) {
+    const fl = f * (0.9 + 0.1 * Math.sin(t * 12));
+    ctx.save();
+    const grd = ctx.createRadialGradient(cx, cy - 10, 0, cx, cy - 10, 70 * fl);
+    grd.addColorStop(0, "rgba(255,225,150,0.95)");
+    grd.addColorStop(0.45, "rgba(255,150,60,0.4)");
+    grd.addColorStop(1, "rgba(255,120,40,0)");
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(cx, cy - 10, 70 * fl, 0, Math.PI * 2); ctx.fill();
+    // corpo da chama
+    ctx.fillStyle = "#ffe6a0";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 26 * fl);
+    ctx.quadraticCurveTo(cx + 9 * fl, cy - 6, cx, cy + 6);
+    ctx.quadraticCurveTo(cx - 9 * fl, cy - 6, cx, cy - 26 * fl);
+    ctx.fill();
+    // núcleo azulado
+    ctx.fillStyle = "rgba(120,160,255,0.5)";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 8 * fl);
+    ctx.quadraticCurveTo(cx + 4 * fl, cy - 2, cx, cy + 4);
+    ctx.quadraticCurveTo(cx - 4 * fl, cy - 2, cx, cy - 8 * fl);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // mãozinha-guia: ponto luminoso pulsante + legenda, demonstrando o gesto
+  function guideHand(ctx, x, y, t, label, hold) {
+    const pulse = hold ? (0.6 + 0.4 * Math.sin(t * 4)) : 0.85;
+    ctx.save();
+    // halo
+    ctx.globalAlpha = 0.5 * pulse;
+    const grd = ctx.createRadialGradient(x, y, 0, x, y, 34);
+    grd.addColorStop(0, "rgba(255,245,220,0.9)");
+    grd.addColorStop(1, "rgba(255,245,220,0)");
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(x, y, 34, 0, Math.PI * 2); ctx.fill();
+    // ponta do dedo
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = "rgba(255,250,240,0.95)";
+    ctx.beginPath(); ctx.arc(x, y, 11 * (hold ? pulse : 1), 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); ctx.stroke();
+    // legenda do gesto
+    ctx.globalAlpha = 0.9;
+    Engine.text(label, x, y - 34, { size: 18, color: "rgba(255,250,235,0.95)", glow: 10 });
+    ctx.restore();
+  }
 
   function lerp01Color(a, b, t) {
     const pa = a.replace("#", ""), pb = b.replace("#", "");

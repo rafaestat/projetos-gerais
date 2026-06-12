@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Ateliê Essenzia">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#3a2614"/>
+      <stop offset="60%" stop-color="#241608"/>
+      <stop offset="100%" stop-color="#140c05"/>
+    </radialGradient>
+    <linearGradient id="wax" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e2c0"/>
+      <stop offset="100%" stop-color="#e0b87f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffdca0" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#ff9a3c" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ff8a30" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff2c4"/>
+      <stop offset="100%" stop-color="#ffb24a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- fundo quente arredondado -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="214" r="190" fill="url(#glow)"/>
+
+  <!-- pote/vidro da vela -->
+  <rect x="176" y="250" width="160" height="170" rx="30" fill="url(#wax)"/>
+  <rect x="176" y="250" width="160" height="170" rx="30" fill="none" stroke="#f6ead2" stroke-opacity="0.45" stroke-width="4"/>
+  <!-- reflexo no vidro -->
+  <rect x="192" y="266" width="22" height="138" rx="11" fill="#ffffff" opacity="0.22"/>
+
+  <!-- pavio -->
+  <rect x="252" y="214" width="8" height="48" rx="4" fill="#4a3320"/>
+
+  <!-- brilho da chama -->
+  <circle cx="256" cy="196" r="86" fill="url(#glow)"/>
+  <!-- chama -->
+  <path d="M256 132 C 286 168, 292 196, 256 224 C 220 196, 226 168, 256 132 Z" fill="url(#flame)"/>
+  <path d="M256 176 C 268 190, 270 202, 256 216 C 242 202, 244 190, 256 176 Z" fill="#9cc0ff" opacity="0.5"/>
+
+  <!-- faíscas decorativas -->
+  <circle cx="150" cy="150" r="5" fill="#ffe6a8" opacity="0.8"/>
+  <circle cx="372" cy="170" r="4" fill="#ffe6a8" opacity="0.7"/>
+  <circle cx="356" cy="118" r="3" fill="#ffe6a8" opacity="0.6"/>
+</svg>
