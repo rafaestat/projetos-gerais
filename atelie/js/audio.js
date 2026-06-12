@@ -271,26 +271,43 @@ const ASMR = (() => {
     osc.stop(t + 0.35);
   }
 
-  // sino suave de conclusão — acorde quente e brilhante
+  // resolução de conclusão estilo "tigela tibetana" / pad morno —
+  // entra devagar (swell), sem ataque/"ding" abrupto, e se dissolve por
+  // muitos segundos. Inspirado nos ASMR de singing bowl e drones suaves.
   function chime() {
     ensure();
-    const base = 523.25; // dó
-    const ratios = [1, 1.25, 1.5, 2]; // tríade maior + oitava
+    const base = 196.0; // sol grave, quente e relaxante
+    const ratios = [1, 1.5, 2, 3]; // raiz + quinta + oitava + 12ª (harmônicos macios)
     ratios.forEach((r, i) => {
       setTimeout(() => {
         const t = ctx.currentTime;
+        // dois osciladores levemente desafinados = batimento orgânico e vivo
         const osc = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
         osc.type = "sine";
+        osc2.type = "sine";
         osc.frequency.value = base * r;
+        osc2.frequency.value = base * r * 1.003;
+
+        // passa-baixa para garantir que nada soe agudo ou áspero
+        const lp = ctx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 900;
+
         const g = ctx.createGain();
+        const peak = 0.06 - i * 0.011; // harmônicos altos bem discretos
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
-        osc.connect(g).connect(reverb);
+        g.gain.linearRampToValueAtTime(peak, t + 1.1);          // swell lento
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 6.5);   // cauda longa
+
+        osc.connect(lp);
+        osc2.connect(lp);
+        lp.connect(g);
+        g.connect(reverb);
         g.connect(master);
-        osc.start(t);
-        osc.stop(t + 2.6);
-      }, i * 140);
+        osc.start(t); osc2.start(t);
+        osc.stop(t + 7); osc2.stop(t + 7);
+      }, i * 450); // as notas surgem bem devagar, como um respirar
     });
   }
 
