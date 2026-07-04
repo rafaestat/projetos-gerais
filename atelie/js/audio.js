@@ -237,6 +237,28 @@ const ASMR = (() => {
     osc.stop(t + 0.15);
   }
 
+  // toque de pluma — feedback quase subliminar ao passar sobre um cartão
+  function tick(x = 0.5) {
+    ensure();
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer();
+    src.loop = true;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 2600;
+    bp.Q.value = 5;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    const pan = panner(x);
+    src.connect(bp).connect(g).connect(pan);
+    pan.connect(master);
+    src.start(t);
+    src.stop(t + 0.08);
+  }
+
   // estalo macio — miçanga caindo, clique de encaixe
   function click(x = 0.5, pitch = 1) {
     ensure();
@@ -333,8 +355,17 @@ const ASMR = (() => {
     });
   }
 
+  /* silencia tudo com um fade suave (nada de corte seco) */
+  let muted = false;
+  function setMuted(m) {
+    ensure();
+    muted = m;
+    master.gain.setTargetAtTime(m ? 0 : 0.9, ctx.currentTime, 0.08);
+  }
+
   return {
-    start, voice, drop, bubble, click, crinkle, press, chime,
+    start, voice, drop, bubble, click, tick, crinkle, press, chime, setMuted,
+    get muted() { return muted; },
     get ready() { return started; },
   };
 })();
