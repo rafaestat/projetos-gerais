@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - claude/atelie-essenzia-asmr-FbS4A
+      - claude/atelier-app-ux-jjlvcq
   workflow_dispatch:
 
 permissions:
