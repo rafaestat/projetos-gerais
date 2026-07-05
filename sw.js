@@ -1,6 +1,6 @@
 /* Service Worker — "rede primeiro": sempre busca a versao mais nova quando
    tem internet, e usa a copia guardada so quando estiver offline. */
-const CACHE = "corrida-lara-v4";
+const CACHE = "corrida-lara-v5-kart";
 const ASSETS = [
   "./",
   "./index.html",

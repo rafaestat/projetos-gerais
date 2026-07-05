@@ -19,24 +19,26 @@
 
     <!-- Tela inicial -->
     <div id="start-screen" class="screen">
-      <h1>🚗 Corrida da Lara</h1>
-      <p class="sub">Escolha seu carrinho, Lara! 💖</p>
+      <h1>🏁 Corrida da Lara</h1>
+      <p class="sub">Uma corrida de kart! Escolha sua cor, Lara! 💖</p>
       <div id="car-picker"></div>
-      <button id="play-btn" class="big-btn">JOGAR ▶</button>
-      <p class="hint">Arraste o dedo para guiar o carrinho 👆</p>
+      <button id="play-btn" class="big-btn">CORRER ▶</button>
+      <p class="hint">Arraste o dedo para dirigir 👆<br>Pegue ⭐, passe no turbo 🔥 e ultrapasse todo mundo!</p>
     </div>
 
     <!-- HUD durante o jogo -->
     <div id="hud" class="hidden">
+      <div id="pos">🏅 4º</div>
+      <div id="lap">🏁 1/3</div>
       <div id="score">⭐ 0</div>
-      <div id="lives">❤️❤️❤️</div>
     </div>
 
-    <!-- Tela de pausa / fim -->
+    <!-- Tela de fim de corrida -->
     <div id="over-screen" class="screen hidden">
-      <h1 id="over-title">Muito bem! 🎉</h1>
-      <p class="sub" id="over-score">Você pegou 0 estrelinhas!</p>
-      <button id="again-btn" class="big-btn">JOGAR DE NOVO 🔄</button>
+      <div id="over-medal">🥇</div>
+      <h1 id="over-title">LARA CAMPEÃ! 🏆</h1>
+      <p class="sub" id="over-score">Você chegou em 1º lugar!</p>
+      <button id="again-btn" class="big-btn">CORRER DE NOVO 🔄</button>
     </div>
   </div>
 
