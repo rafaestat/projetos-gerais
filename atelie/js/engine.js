@@ -19,6 +19,7 @@ const Engine = (() => {
     px: 0.5, py: 0.5,    // frame anterior
     sx: 0.5, sy: 0.5,    // posição suavizada (para elementos que "seguem" o dedo)
     down: false,
+    moved: false,         // já recebeu alguma entrada real do ponteiro?
     speed: 0,            // velocidade suavizada
     rawSpeed: 0,
   };
@@ -59,6 +60,7 @@ const Engine = (() => {
   function setPointerFromEvent(e) {
     pointer.x = e.clientX / W;
     pointer.y = e.clientY / H;
+    pointer.moved = true;
   }
 
   let activePointer = null; // só o primeiro dedo comanda (evita saltos com multi-toque)
@@ -67,6 +69,7 @@ const Engine = (() => {
     canvas.addEventListener("pointerdown", (e) => {
       if (activePointer !== null) return;
       activePointer = e.pointerId;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {} // arrasto rápido não perde o rastreamento
       setPointerFromEvent(e);
       pointer.px = pointer.x; pointer.py = pointer.y;
       pointer.sx = pointer.x; pointer.sy = pointer.y;

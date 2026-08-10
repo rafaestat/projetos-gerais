@@ -217,6 +217,9 @@
         Engine.go(c.id);
       }
     },
+    cue() {
+      return { cursor: this.hover >= 0 ? "pointer" : "default" };
+    },
     update(dt) {
       this.cards.forEach((c, i) => {
         c.hoverK = Engine.approach(c.hoverK, i === this.hover ? 1 : 0, 10, dt);
@@ -267,6 +270,7 @@
         });
         ctx.restore();
       });
+      Affordance.render(ctx, this.cue(), t);
     },
   });
 
@@ -336,6 +340,11 @@
       this.complete = false;
       this.flame = 0;
       this.acted = false; // o usuário já fez o gesto deste passo? (esconde a mãozinha-guia)
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
       const a = VELA_AROMAS[Math.floor(rand(0, VELA_AROMAS.length))];
       this.aroma = a.nome;
       this.scent = a.cor;
@@ -366,6 +375,7 @@
     },
     onDown() {
       if (this.complete) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0) {
         this.voice = ASMR.voice({ type: "lowpass", freq: 620, max: 0.4, color: 1.5 });
       } else if (this.step === 1) {
@@ -422,6 +432,7 @@
     },
     update(dt, p, t) {
       const g = this.geom(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       // o pavio segue o dedo com um pouquinho de inércia — sensação de peso
       this.wick.x = Engine.approach(this.wick.x, this.wick.tx, this.wick.drag ? 22 : 10, dt);
       this.wick.y = Engine.approach(this.wick.y, this.wick.ty, this.wick.drag ? 22 : 10, dt);
@@ -451,13 +462,30 @@
         if (this.fill >= 1) { this.step = 2; this.acted = false; this.stepHint(); }
       }
       if (this.complete) this.flame = clamp(this.flame + dt * 1.2, 0, 1);
+      // cursor: grab/grabbing perto do objeto interativo do passo atual — nunca em draw()
+      if (this.step === 0) {
+        const pot = g.pot;
+        const near = px() > pot.x - 30 && px() < pot.x + pot.w + 30 && py() > pot.y - 30 && py() < pot.y + pot.h + 30;
+        this.cursorName = p.down ? "grabbing" : (p.moved && near ? "grab" : "default");
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
       const wax = this.scent;
 
       // ---- panela de cera (sempre visível; é a fonte) ----
-      drawCauldron(ctx, g.pot, this.step === 0 ? this.melt : 1, wax);
+      if (this.step === 0) {
+        const ccx = g.pot.x + g.pot.w / 2, ccy = g.pot.y + g.pot.h / 2;
+        const s = Affordance.breathe(t, 0, 0.012) * Affordance.contactScale(this.contact);
+        ctx.save();
+        ctx.translate(ccx, ccy);
+        ctx.scale(s, s);
+        ctx.translate(-ccx, -ccy);
+        drawCauldron(ctx, g.pot, this.melt, wax);
+        ctx.restore();
+      } else {
+        drawCauldron(ctx, g.pot, 1, wax);
+      }
 
       // ---- jorro de cera ao despejar (com leve ondulação viva) ----
       if (this.step === 1 && P().down) {
@@ -493,6 +521,7 @@
       });
 
       progressRing(ctx, W, H, this.complete ? 1 : (this.step + (this.step === 0 ? this.melt : this.step === 1 ? this.fill : 0)) / 4);
+      Affordance.render(ctx, this.cue(), t);
     },
     overlay(ctx, W, H, t) {
       if (this.complete || this.acted) return;
@@ -514,6 +543,19 @@
         const cx = g.jar.x + g.jar.w / 2 + Math.sin(t * 2) * g.jar.w * 0.25;
         guideHand(ctx, cx, g.jar.y + 34, t, "toque", true);
       }
+    },
+    cue() {
+      if (this.step === 0 && !this.acted && !this.complete) {
+        const g = this.geom(Engine.W, Engine.H);
+        const cx = g.pot.x + g.pot.w / 2, cy = g.pot.y + g.pot.h / 2;
+        const cues = [{
+          kind: "invitation", x: cx, y: cy, r: g.pot.w * 0.45,
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+        if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+        return cues;
+      }
+      return { cursor: this.cursorName };
     },
   });
 
