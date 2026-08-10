@@ -462,11 +462,28 @@
         if (this.fill >= 1) { this.step = 2; this.acted = false; this.stepHint(); }
       }
       if (this.complete) this.flame = clamp(this.flame + dt * 1.2, 0, 1);
-      // cursor: grab/grabbing perto do objeto interativo do passo atual — nunca em draw()
-      if (this.step === 0) {
+      // alvo de encaixe do pavio — mesmo ponto usado pela regra de aceitação em onUp()
+      const wickTargetX = g.jar.x + g.jar.w / 2, wickTargetY = g.jar.y + 22;
+      if (this.wick.drag) {
+        this.snapK = clamp(1 - dist(this.wick.x, this.wick.y, wickTargetX, wickTargetY) / 90, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: grab/grabbing/pointer perto do objeto interativo do passo atual — nunca em draw()
+      if (p.down) {
+        this.cursorName = "grabbing";
+      } else if (this.step === 0) {
         const pot = g.pot;
         const near = px() > pot.x - 30 && px() < pot.x + pot.w + 30 && py() > pot.y - 30 && py() < pot.y + pot.h + 30;
-        this.cursorName = p.down ? "grabbing" : (p.moved && near ? "grab" : "default");
+        this.cursorName = p.moved && near ? "grab" : "default";
+      } else if (this.step === 2) {
+        this.cursorName = p.moved && dist(px(), py(), this.wick.x, this.wick.y) < 95 ? "grab" : "default";
+      } else if (this.step === 1 || this.step === 3) {
+        const jar = g.jar;
+        const near = px() > jar.x - 40 && px() < jar.x + jar.w + 40 && py() > jar.y - 40 && py() < jar.y + jar.h + 40;
+        this.cursorName = p.moved && near ? "pointer" : "default";
+      } else {
+        this.cursorName = "default";
       }
     },
     draw(ctx, W, H, t) {
@@ -502,11 +519,23 @@
       }
 
       // ---- pote de vidro (a vela) ----
-      drawGlassJar(ctx, g.jar, this.step >= 1 ? this.fill : 0, wax);
+      if (this.step === 1) {
+        const jcx = g.jar.x + g.jar.w / 2, jcy = g.jar.y + g.jar.h / 2;
+        const js = Affordance.breathe(t, 1.2, 0.010) * Affordance.contactScale(this.contact);
+        ctx.save();
+        ctx.translate(jcx, jcy);
+        ctx.scale(js, js);
+        ctx.translate(-jcx, -jcy);
+        drawGlassJar(ctx, g.jar, this.fill, wax);
+        ctx.restore();
+      } else {
+        drawGlassJar(ctx, g.jar, this.step >= 1 ? this.fill : 0, wax);
+      }
 
       // ---- pavio ----
       if (this.step >= 2) {
-        drawWick(ctx, this.wick.x, this.wick.y, this.wick.placed ? g.jar.h * this.fill - 30 : 70, this.wick.drag);
+        const wickSway = (!this.wick.drag && !this.wick.placed) ? Affordance.sway(t, 0.5, 2.5) : 0;
+        drawWick(ctx, this.wick.x + wickSway, this.wick.y, this.wick.placed ? g.jar.h * this.fill - 30 : 70, this.wick.drag);
       }
 
       // ---- chama acesa ao concluir ----
@@ -545,17 +574,41 @@
       }
     },
     cue() {
-      if (this.step === 0 && !this.acted && !this.complete) {
-        const g = this.geom(Engine.W, Engine.H);
+      if (this.complete) return { cursor: "pointer" };
+      const g = this.geom(Engine.W, Engine.H);
+      let cues;
+      if (this.step === 0 && !this.acted) {
         const cx = g.pot.x + g.pot.w / 2, cy = g.pot.y + g.pot.h / 2;
-        const cues = [{
+        cues = [{
           kind: "invitation", x: cx, y: cy, r: g.pot.w * 0.45,
           gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
         }];
-        if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
-        return cues;
+      } else if (this.step === 1 && !this.acted) {
+        cues = [{
+          kind: "invitation", x: g.jar.x + g.jar.w / 2, y: g.jar.y + 30, r: 44,
+          gesture: "hold", cursor: this.cursorName,
+        }];
+      } else if (this.step === 2) {
+        const tx = g.jar.x + g.jar.w / 2, ty = g.jar.y + 22;
+        const dx = tx - this.wick.x, dy = ty - this.wick.y;
+        const len = Math.hypot(dx, dy) || 1;
+        cues = [
+          {
+            kind: "invitation", x: this.wick.x, y: this.wick.y, r: 40,
+            gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+          },
+          { kind: "snap", x: tx, y: ty, intensity: this.snapK },
+        ];
+      } else if (this.step === 3 && this.petals < 1) {
+        cues = [{
+          kind: "invitation", x: g.jar.x + g.jar.w / 2, y: g.jar.y + 34, r: 38,
+          gesture: "tap", cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
       }
-      return { cursor: this.cursorName };
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
   });
 
@@ -682,6 +735,7 @@
 
   // mãozinha-guia: ponto luminoso pulsante + legenda, demonstrando o gesto
   function guideHand(ctx, x, y, t, label, hold) {
+    if (!Affordance.legacyGuide) return;
     const pulse = hold ? (0.6 + 0.4 * Math.sin(t * 4)) : 0.85;
     ctx.save();
     // halo
