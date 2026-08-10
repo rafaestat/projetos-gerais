@@ -13,7 +13,7 @@ A experiência precisa ser gostosa e relaxante, e cada interação deve se expli
 - **Customer**: Clientes da loja de sabonetes e velas artesanais da esposa do Rafael
 - **Revenue model**: Não monetiza diretamente — é uma peça de marketing/marca distribuída como link (Instagram/WhatsApp), não uma loja
 - **Success metric**: Sensação de cuidado e relaxamento transmitida (qualitativo); indício: clientes entendem o que fazer em cada estação sem precisar de instrução, e a experiência "parece" a marca (luxo com alma artesanal)
-- **Strategy notes**: Referência estética citada: "estilo Peter Paiva" — luxo sofisticado com alma artesanal (nem frio/industrial, nem cru)
+- **Strategy notes**: Referência estética citada: "estilo Peter Paiva" — luxo sofisticado com alma artesanal (nem frio/industrial, nem cru). Distribuição confirmada: por enquanto é só um link enviado por WhatsApp — não uma integração com site/loja nem QR code físico. Instagram é canal futuro possível, não o plano imediato.
 
 ## Requirements
 
