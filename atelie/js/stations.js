@@ -355,7 +355,8 @@
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     geom(W, H) {
-      const jw = Math.min(150, W * 0.26), jh = jw * 1.35;
+      // objetos ~17% maiores que o original — feedback de checkpoint: "ícones muito pequenos"
+      const jw = Math.min(175, W * 0.30), jh = jw * 1.35;
       const jx = W / 2 - jw / 2, jy = H * 0.40;
       const pw = jw * 1.25, ph = pw * 0.62;
       const px0 = W / 2 - pw / 2, py0 = H * 0.14;
