@@ -1111,7 +1111,16 @@
    *  LIXAR MADEIRA
    * ===================================================================== */
   Engine.register("madeira", {
-    enter(W, H) { this.newPlank(); this.voice = null; this.sanding = 0; hint("Deslize a lixa para frente e para trás sobre a madeira."); },
+    enter(W, H) {
+      this.newPlank();
+      this.voice = null;
+      this.sanding = 0;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      hint("Deslize a lixa para frente e para trás sobre a madeira.");
+    },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     newPlank() {
       this.smooth = 0;
@@ -1122,6 +1131,7 @@
     inPlank() { const g = this.geom(Engine.W, Engine.H); return px() > g.x && px() < g.x + g.w && py() > g.y && py() < g.y + g.h; },
     onDown() {
       if (this.done) { this.newPlank(); hint("Outra peça de madeira para acariciar."); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       this.voice = ASMR.voice({ type: "bandpass", freq: 1100, q: 0.8, max: 0.5, color: 1.4, reverbSend: 0.35 });
     },
     onMove(p) {
@@ -1144,10 +1154,25 @@
     },
     onUp() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     update(dt, p) {
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       this.sanding = Engine.approach(this.sanding, p.down && !this.done ? 1 : 0, 10, dt);
+      // cursor: grab só dentro da tábua — nunca decidido em draw()
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else {
+        this.cursorName = p.moved && this.inPlank() ? "grab" : "default";
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
+      const cx = g.x + g.w / 2, cy = g.y + g.h / 2;
+      const s = (this.smooth < 0.05 && !this.done) ? Affordance.breathe(t, 0, 0.010) * Affordance.contactScale(this.contact) : 1;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(s, s);
+      ctx.translate(-cx, -cy);
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 22; ctx.shadowOffsetY = 12;
       const col = lerp01Color(this.base, shade(this.base, 0.35), this.smooth);
@@ -1177,7 +1202,8 @@
         ctx.fillStyle = sg; ctx.fillRect(g.x, g.y, g.w, g.h);
       }
       ctx.restore();
-      // o bloco de lixa segue a mão (posição suavizada = sensação de peso)
+      ctx.restore();
+      // o bloco de lixa segue a mão (posição suavizada = sensação de peso) — fica fora do wrapper
       if (this.sanding > 0.02) {
         ctx.save();
         ctx.globalAlpha = this.sanding;
@@ -1199,6 +1225,22 @@
         ctx.restore();
       }
       progressRing(ctx, W, H, this.smooth);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      const g = this.geom(Engine.W, Engine.H);
+      const cx = g.x + g.w / 2, cy = g.y + g.h / 2;
+      let cues;
+      if (!this.done && this.smooth < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: Math.min(g.h * 0.7, 70),
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done || this.smooth > 0.05) return;
