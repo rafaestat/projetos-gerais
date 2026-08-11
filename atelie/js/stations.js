@@ -781,6 +781,10 @@
       this.voice = null;
       this.complete = false;
       this._adv = false;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
       hint("Passo 1 de 4 · Despeje a base de glicerina — segure sobre a forma.");
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
@@ -790,6 +794,7 @@
     },
     onDown() {
       if (this.complete) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0) {
         this.voice = ASMR.voice({ type: "bandpass", freq: 850, q: 1.1, max: 0.45 });
       } else if (this.step === 1) {
@@ -840,6 +845,7 @@
     },
     update(dt, p, t) {
       const g = this.geom(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       this.cutAnim = clamp(this.cutAnim + dt * 3, 0, 1);
       if (this.step === 0 && p.down && this.voice) {
         this.voice.update(p.x, 0.7);
@@ -856,22 +862,38 @@
         s.r = lerp(s.r, s.max, 0.06);
         if (s.trail && s.age > 1.5) this.swirls.splice(i, 1);
       }
+      // cursor: grab/grabbing/pointer perto da forma — nunca decidido em draw()
+      if (this.complete) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else {
+        const near = p.moved && px() > g.mx - 40 && px() < g.mx + g.mw + 40 && py() > g.my - 40 && py() < g.my + g.mh + 40;
+        if (near) this.cursorName = (this.step === 0 || this.step === 2) ? "pointer" : "grab";
+        else this.cursorName = "default";
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
+      const cx = g.mx + g.mw / 2, cy = g.my + g.mh / 2;
+      const s = this.complete ? 1 : Affordance.breathe(t, 0.4, 0.012) * Affordance.contactScale(this.contact);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(s, s);
+      ctx.translate(-cx, -cy);
       drawMold(ctx, g.mx, g.my, g.mw, g.mh, this.fill, this.color);
       // redemoinhos de cor dentro da forma
       if (this.fill > 0.1) {
         ctx.save();
         roundRect(ctx, g.mx, g.my, g.mw, g.mh, 10); ctx.clip();
         const top = g.my + g.mh - g.mh * this.fill;
-        for (const s of this.swirls) {
+        for (const swirl of this.swirls) {
           ctx.globalAlpha = 0.5;
-          const grd = ctx.createRadialGradient(s.x, Math.max(s.y, top), 0, s.x, Math.max(s.y, top), s.r);
-          grd.addColorStop(0, s.col);
+          const grd = ctx.createRadialGradient(swirl.x, Math.max(swirl.y, top), 0, swirl.x, Math.max(swirl.y, top), swirl.r);
+          grd.addColorStop(0, swirl.col);
           grd.addColorStop(1, "rgba(0,0,0,0)");
           ctx.fillStyle = grd;
-          ctx.beginPath(); ctx.arc(s.x, Math.max(s.y, top + 4), s.r, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(swirl.x, Math.max(swirl.y, top + 4), swirl.r, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore();
       }
@@ -886,8 +908,41 @@
         }
         ctx.restore();
       }
+      ctx.restore();
       const prog = this.complete ? 1 : (this.step + (this.step === 0 ? this.fill : this.step === 1 ? this.swirl : this.step === 2 ? this.essence / 5 : this.cuts / 3)) / 4;
       progressRing(ctx, W, H, prog);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      if (this.complete) return { cursor: "pointer" };
+      const g = this.geom(Engine.W, Engine.H);
+      const cx = g.mx + g.mw / 2, cy = g.my + g.mh / 2;
+      let cues;
+      if (this.step === 0 && this.fill < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: g.my - 4, r: 46,
+          gesture: "hold", cursor: this.cursorName,
+        }];
+      } else if (this.step === 1 && this.swirl < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: g.mw * 0.3,
+          gesture: "orbit", cursor: this.cursorName,
+        }];
+      } else if (this.step === 2 && this.essence < 1) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: 40,
+          gesture: "tap", cursor: this.cursorName,
+        }];
+      } else if (this.step === 3 && this.cuts < 1) {
+        cues = [{
+          kind: "invitation", x: g.mx + g.mw * 0.25, y: cy, r: 44,
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.complete) return;
