@@ -1256,6 +1256,13 @@
     enter(W, H) {
       this.step = 0; this.puddle = 0; this.pressT = 0; this.done = false;
       this.voice = null; this.cor = ["#c75b4a", "#7a3b6a", "#3b5a7a", "#3b6a4a"][Math.floor(rand(0, 4))];
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
+      // estado explícito desde já — antes só nascia em onDown() e ficava undefined até o primeiro toque
+      this.pressing = false;
       hint("Pingue a cera derretida sobre o papel — segure no centro.");
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
@@ -1263,6 +1270,7 @@
     onDown() {
       const c = this.center(Engine.W, Engine.H);
       if (this.done) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0) {
         this.voice = ASMR.voice({ type: "bandpass", freq: 700, q: 1.4, max: 0.4 });
       } else if (this.step === 1) {
@@ -1282,6 +1290,7 @@
     },
     update(dt, p) {
       const c = this.center(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       if (this.step === 0 && p.down && this.voice) {
         this.voice.update(p.x, 0.5);
         if (dist(px(), py(), c.x, c.y) < 120) {
@@ -1292,6 +1301,24 @@
       }
       if (this.step === 1 && this.pressing) {
         this.pressT = clamp(this.pressT + dt * 0.9, 0, 1);
+      }
+      // halo de encaixe: mesmo raio 100 que onDown() usa para aceitar a prensagem
+      if (this.step === 1) {
+        this.snapK = this.pressing ? 1 : clamp(1 - dist(sx(), sy(), c.x, c.y) / 100, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: nunca decidido em draw()
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else if (this.step === 0) {
+        this.cursorName = p.moved && dist(px(), py(), c.x, c.y) < 120 ? "pointer" : "default";
+      } else if (this.step === 1) {
+        this.cursorName = p.moved ? "grab" : "default";
+      } else {
+        this.cursorName = "default";
       }
     },
     draw(ctx, W, H, t) {
@@ -1330,10 +1357,15 @@
         }
         ctx.restore();
       }
-      // selo seguindo a mão (suavizado) no passo 1
+      // selo seguindo a mão (suavizado) no passo 1 — ganha peso visual em repouso
       if (this.step === 1 && !this.done) {
-        const tx = this.pressing ? c.x : sx(), ty = this.pressing ? c.y + (1 - this.pressT) * 30 : sy();
+        const tx = this.pressing ? c.x : sx();
+        const ty = (this.pressing ? c.y + (1 - this.pressT) * 30 : sy()) + (this.pressing ? 0 : Affordance.bob(t, 0.4, 3));
+        const k = Affordance.contactScale(this.contact);
         ctx.save();
+        ctx.translate(tx, ty);
+        ctx.scale(k, k);
+        ctx.translate(-tx, -ty);
         ctx.fillStyle = "#5a4632"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 16;
         ctx.beginPath(); ctx.arc(tx, ty, 30, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "#3a2a1c";
@@ -1341,6 +1373,32 @@
         ctx.restore();
       }
       progressRing(ctx, W, H, this.done ? 1 : (this.step + (this.step === 0 ? this.puddle : this.pressT)) / 2);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      if (this.done) return { cursor: "pointer" };
+      const c = this.center(Engine.W, Engine.H);
+      let cues;
+      if (this.step === 0 && this.puddle < 0.05) {
+        cues = [{
+          kind: "invitation", x: c.x, y: c.y, r: 48,
+          gesture: "hold", cursor: this.cursorName,
+        }];
+      } else if (this.step === 1) {
+        cues = [{ kind: "snap", x: c.x, y: c.y, r: 66, intensity: this.snapK }];
+        if (this.pressT < 0.05) {
+          cues.push({
+            kind: "invitation", x: c.x, y: c.y - 30, r: 44,
+            gesture: "hold", cursor: this.cursorName,
+          });
+        } else {
+          cues.push({ cursor: this.cursorName });
+        }
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done) return;
