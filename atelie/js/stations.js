@@ -781,6 +781,10 @@
       this.voice = null;
       this.complete = false;
       this._adv = false;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
       hint("Passo 1 de 4 · Despeje a base de glicerina — segure sobre a forma.");
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
@@ -790,6 +794,7 @@
     },
     onDown() {
       if (this.complete) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0) {
         this.voice = ASMR.voice({ type: "bandpass", freq: 850, q: 1.1, max: 0.45 });
       } else if (this.step === 1) {
@@ -840,6 +845,7 @@
     },
     update(dt, p, t) {
       const g = this.geom(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       this.cutAnim = clamp(this.cutAnim + dt * 3, 0, 1);
       if (this.step === 0 && p.down && this.voice) {
         this.voice.update(p.x, 0.7);
@@ -856,22 +862,38 @@
         s.r = lerp(s.r, s.max, 0.06);
         if (s.trail && s.age > 1.5) this.swirls.splice(i, 1);
       }
+      // cursor: grab/grabbing/pointer perto da forma — nunca decidido em draw()
+      if (this.complete) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else {
+        const near = p.moved && px() > g.mx - 40 && px() < g.mx + g.mw + 40 && py() > g.my - 40 && py() < g.my + g.mh + 40;
+        if (near) this.cursorName = (this.step === 0 || this.step === 2) ? "pointer" : "grab";
+        else this.cursorName = "default";
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
+      const cx = g.mx + g.mw / 2, cy = g.my + g.mh / 2;
+      const s = this.complete ? 1 : Affordance.breathe(t, 0.4, 0.012) * Affordance.contactScale(this.contact);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(s, s);
+      ctx.translate(-cx, -cy);
       drawMold(ctx, g.mx, g.my, g.mw, g.mh, this.fill, this.color);
       // redemoinhos de cor dentro da forma
       if (this.fill > 0.1) {
         ctx.save();
         roundRect(ctx, g.mx, g.my, g.mw, g.mh, 10); ctx.clip();
         const top = g.my + g.mh - g.mh * this.fill;
-        for (const s of this.swirls) {
+        for (const swirl of this.swirls) {
           ctx.globalAlpha = 0.5;
-          const grd = ctx.createRadialGradient(s.x, Math.max(s.y, top), 0, s.x, Math.max(s.y, top), s.r);
-          grd.addColorStop(0, s.col);
+          const grd = ctx.createRadialGradient(swirl.x, Math.max(swirl.y, top), 0, swirl.x, Math.max(swirl.y, top), swirl.r);
+          grd.addColorStop(0, swirl.col);
           grd.addColorStop(1, "rgba(0,0,0,0)");
           ctx.fillStyle = grd;
-          ctx.beginPath(); ctx.arc(s.x, Math.max(s.y, top + 4), s.r, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(swirl.x, Math.max(swirl.y, top + 4), swirl.r, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore();
       }
@@ -886,8 +908,41 @@
         }
         ctx.restore();
       }
+      ctx.restore();
       const prog = this.complete ? 1 : (this.step + (this.step === 0 ? this.fill : this.step === 1 ? this.swirl : this.step === 2 ? this.essence / 5 : this.cuts / 3)) / 4;
       progressRing(ctx, W, H, prog);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      if (this.complete) return { cursor: "pointer" };
+      const g = this.geom(Engine.W, Engine.H);
+      const cx = g.mx + g.mw / 2, cy = g.my + g.mh / 2;
+      let cues;
+      if (this.step === 0 && this.fill < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: g.my - 4, r: 46,
+          gesture: "hold", cursor: this.cursorName,
+        }];
+      } else if (this.step === 1 && this.swirl < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: g.mw * 0.3,
+          gesture: "orbit", cursor: this.cursorName,
+        }];
+      } else if (this.step === 2 && this.essence < 1) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: 40,
+          gesture: "tap", cursor: this.cursorName,
+        }];
+      } else if (this.step === 3 && this.cuts < 1) {
+        cues = [{
+          kind: "invitation", x: g.mx + g.mw * 0.25, y: cy, r: 44,
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.complete) return;
@@ -904,7 +959,16 @@
    *  CORTE DE PAPEL
    * ===================================================================== */
   Engine.register("papel", {
-    enter(W, H) { this.newSheet(W, H); this.voice = null; hint("Siga a linha pontilhada com a tesoura, de cima a baixo."); },
+    enter(W, H) {
+      this.newSheet(W, H);
+      this.voice = null;
+      // o cursor e o toque são estado de sessão, não de folha — ficam em enter(), não em newSheet()
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      hint("Siga a linha pontilhada com a tesoura, de cima a baixo.");
+    },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     newSheet(W, H) {
       this.cut = 0;
@@ -918,6 +982,7 @@
     onDown() {
       const g = this.geom(Engine.W, Engine.H);
       if (this.done) { this.newSheet(Engine.W, Engine.H); hint("Outra folha, outra textura."); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (Math.abs(px() - this.guideX) < 50 && py() < g.y + this.cut * g.h + 60) {
         this.voice = ASMR.voice({ type: "highpass", freq: 2200, max: 0.5, color: 1.2, reverbSend: 0.3 });
       }
@@ -944,8 +1009,19 @@
     },
     onUp() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     update(dt, p) {
+      const g = this.geom(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       if (this.done) this.sep = Engine.approach(this.sep, 44, 4, dt);
       this.cutting = Engine.approach(this.cutting, p.down && this.voice ? 1 : 0, 10, dt);
+      // cursor: grab enquanto perto da linha-guia, dentro da faixa vertical da folha
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else {
+        const near = p.moved && Math.abs(px() - this.guideX) < 65 && py() > g.y - 20 && py() < g.y + g.h + 20;
+        this.cursorName = near ? "grab" : "default";
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
@@ -972,9 +1048,32 @@
       ctx.strokeStyle = "rgba(232,160,90,0.55)"; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
       ctx.beginPath(); ctx.moveTo(this.guideX, splitTop); ctx.lineTo(this.guideX, g.y + g.h); ctx.stroke();
       ctx.restore();
-      // a tesourinha na ponta do corte
-      if (!this.done) drawScissors(ctx, this.guideX, splitTop, t, this.cutting);
+      // a tesourinha na ponta do corte — flutua de leve em repouso, firma durante o corte
+      if (!this.done) {
+        const bobY = this.cutting < 0.05 ? Affordance.bob(t, 0, 3) : 0;
+        drawScissors(ctx, this.guideX, splitTop + bobY, t, this.cutting);
+      }
       progressRing(ctx, W, H, this.cut);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      const g = this.geom(Engine.W, Engine.H);
+      let cues;
+      if (this.done) {
+        cues = [{ cursor: this.cursorName }];
+      } else {
+        cues = [{ kind: "snap", x: this.guideX, y: g.y + g.h, r: 64, intensity: this.cut }];
+        if (this.cut < 0.05) {
+          cues.push({
+            kind: "invitation", x: this.guideX, y: g.y + 26, r: 44,
+            gesture: "drag", dir: { x: 0, y: 1 }, cursor: this.cursorName,
+          });
+        } else {
+          cues.push({ cursor: this.cursorName });
+        }
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done || this.cut > 0.05) return;
@@ -1012,7 +1111,16 @@
    *  LIXAR MADEIRA
    * ===================================================================== */
   Engine.register("madeira", {
-    enter(W, H) { this.newPlank(); this.voice = null; this.sanding = 0; hint("Deslize a lixa para frente e para trás sobre a madeira."); },
+    enter(W, H) {
+      this.newPlank();
+      this.voice = null;
+      this.sanding = 0;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      hint("Deslize a lixa para frente e para trás sobre a madeira.");
+    },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     newPlank() {
       this.smooth = 0;
@@ -1023,6 +1131,7 @@
     inPlank() { const g = this.geom(Engine.W, Engine.H); return px() > g.x && px() < g.x + g.w && py() > g.y && py() < g.y + g.h; },
     onDown() {
       if (this.done) { this.newPlank(); hint("Outra peça de madeira para acariciar."); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       this.voice = ASMR.voice({ type: "bandpass", freq: 1100, q: 0.8, max: 0.5, color: 1.4, reverbSend: 0.35 });
     },
     onMove(p) {
@@ -1045,10 +1154,25 @@
     },
     onUp() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     update(dt, p) {
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       this.sanding = Engine.approach(this.sanding, p.down && !this.done ? 1 : 0, 10, dt);
+      // cursor: grab só dentro da tábua — nunca decidido em draw()
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else {
+        this.cursorName = p.moved && this.inPlank() ? "grab" : "default";
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
+      const cx = g.x + g.w / 2, cy = g.y + g.h / 2;
+      const s = (this.smooth < 0.05 && !this.done) ? Affordance.breathe(t, 0, 0.010) * Affordance.contactScale(this.contact) : 1;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(s, s);
+      ctx.translate(-cx, -cy);
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 22; ctx.shadowOffsetY = 12;
       const col = lerp01Color(this.base, shade(this.base, 0.35), this.smooth);
@@ -1078,7 +1202,8 @@
         ctx.fillStyle = sg; ctx.fillRect(g.x, g.y, g.w, g.h);
       }
       ctx.restore();
-      // o bloco de lixa segue a mão (posição suavizada = sensação de peso)
+      ctx.restore();
+      // o bloco de lixa segue a mão (posição suavizada = sensação de peso) — fica fora do wrapper
       if (this.sanding > 0.02) {
         ctx.save();
         ctx.globalAlpha = this.sanding;
@@ -1100,6 +1225,22 @@
         ctx.restore();
       }
       progressRing(ctx, W, H, this.smooth);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      const g = this.geom(Engine.W, Engine.H);
+      const cx = g.x + g.w / 2, cy = g.y + g.h / 2;
+      let cues;
+      if (!this.done && this.smooth < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: Math.min(g.h * 0.7, 70),
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done || this.smooth > 0.05) return;
@@ -1115,6 +1256,13 @@
     enter(W, H) {
       this.step = 0; this.puddle = 0; this.pressT = 0; this.done = false;
       this.voice = null; this.cor = ["#c75b4a", "#7a3b6a", "#3b5a7a", "#3b6a4a"][Math.floor(rand(0, 4))];
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
+      // estado explícito desde já — antes só nascia em onDown() e ficava undefined até o primeiro toque
+      this.pressing = false;
       hint("Pingue a cera derretida sobre o papel — segure no centro.");
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
@@ -1122,6 +1270,7 @@
     onDown() {
       const c = this.center(Engine.W, Engine.H);
       if (this.done) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0) {
         this.voice = ASMR.voice({ type: "bandpass", freq: 700, q: 1.4, max: 0.4 });
       } else if (this.step === 1) {
@@ -1141,6 +1290,7 @@
     },
     update(dt, p) {
       const c = this.center(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       if (this.step === 0 && p.down && this.voice) {
         this.voice.update(p.x, 0.5);
         if (dist(px(), py(), c.x, c.y) < 120) {
@@ -1151,6 +1301,24 @@
       }
       if (this.step === 1 && this.pressing) {
         this.pressT = clamp(this.pressT + dt * 0.9, 0, 1);
+      }
+      // halo de encaixe: mesmo raio 100 que onDown() usa para aceitar a prensagem
+      if (this.step === 1) {
+        this.snapK = this.pressing ? 1 : clamp(1 - dist(sx(), sy(), c.x, c.y) / 100, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: nunca decidido em draw()
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else if (this.step === 0) {
+        this.cursorName = p.moved && dist(px(), py(), c.x, c.y) < 120 ? "pointer" : "default";
+      } else if (this.step === 1) {
+        this.cursorName = p.moved ? "grab" : "default";
+      } else {
+        this.cursorName = "default";
       }
     },
     draw(ctx, W, H, t) {
@@ -1189,10 +1357,15 @@
         }
         ctx.restore();
       }
-      // selo seguindo a mão (suavizado) no passo 1
+      // selo seguindo a mão (suavizado) no passo 1 — ganha peso visual em repouso
       if (this.step === 1 && !this.done) {
-        const tx = this.pressing ? c.x : sx(), ty = this.pressing ? c.y + (1 - this.pressT) * 30 : sy();
+        const tx = this.pressing ? c.x : sx();
+        const ty = (this.pressing ? c.y + (1 - this.pressT) * 30 : sy()) + (this.pressing ? 0 : Affordance.bob(t, 0.4, 3));
+        const k = Affordance.contactScale(this.contact);
         ctx.save();
+        ctx.translate(tx, ty);
+        ctx.scale(k, k);
+        ctx.translate(-tx, -ty);
         ctx.fillStyle = "#5a4632"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 16;
         ctx.beginPath(); ctx.arc(tx, ty, 30, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "#3a2a1c";
@@ -1200,6 +1373,32 @@
         ctx.restore();
       }
       progressRing(ctx, W, H, this.done ? 1 : (this.step + (this.step === 0 ? this.puddle : this.pressT)) / 2);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      if (this.done) return { cursor: "pointer" };
+      const c = this.center(Engine.W, Engine.H);
+      let cues;
+      if (this.step === 0 && this.puddle < 0.05) {
+        cues = [{
+          kind: "invitation", x: c.x, y: c.y, r: 48,
+          gesture: "hold", cursor: this.cursorName,
+        }];
+      } else if (this.step === 1) {
+        cues = [{ kind: "snap", x: c.x, y: c.y, r: 66, intensity: this.snapK }];
+        if (this.pressT < 0.05) {
+          cues.push({
+            kind: "invitation", x: c.x, y: c.y - 30, r: 44,
+            gesture: "hold", cursor: this.cursorName,
+          });
+        } else {
+          cues.push({ cursor: this.cursorName });
+        }
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done) return;
@@ -1219,6 +1418,11 @@
       this.beads = [];
       this.held = null;
       this.sorted = 0;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
       for (let i = 0; i < 14; i++) this.spawnBead(W, H);
       hint("Leve cada miçanga ao potinho da sua cor. Sem pressa.");
     },
@@ -1241,6 +1445,7 @@
       });
     },
     onDown() {
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       // pega a miçanga mais próxima sob o dedo (área generosa)
       let best = null, bd = 46;
       for (const b of this.beads) {
@@ -1275,7 +1480,8 @@
         }, 350);
       }
     },
-    update(dt) {
+    update(dt, p, t) {
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       for (const b of this.beads) {
         b.born = Math.min(1, (b.born || 0) + dt * 2.5);
         if (b.dropping && b.target) {
@@ -1288,6 +1494,20 @@
         }
       }
       for (const j of this.jars) j.pop = Engine.approach(j.pop, 0, 6, dt);
+      // halo de encaixe: mesmo limiar (Engine.H - 220) que onUp() usa para aceitar a soltura
+      if (this.held) {
+        this.snapK = clamp(1 - ((Engine.H - 220) - py()) / 160, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: nunca decidido em draw()
+      if (this.held) {
+        this.cursorName = "grabbing";
+      } else if (p.moved && this.beads.some((b) => dist(px(), py(), b.x, b.y) < b.r + 20)) {
+        this.cursorName = "grab";
+      } else {
+        this.cursorName = "default";
+      }
     },
     draw(ctx, W, H, t) {
       // potes
@@ -1317,10 +1537,11 @@
         ctx.beginPath(); ctx.arc(g.x + g.w / 2, g.y - 14, 6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       });
-      // miçangas soltas — flutuam de leve, como se respirassem
+      // miçangas soltas — flutuam de leve, como se respirassem (multiplicadores do
+      // módulo Affordance, para prefers-reduced-motion ser respeitado de graça)
       for (const b of this.beads) {
-        const bob = b.held || b.dropping ? 0 : Math.sin(t * 1.3 + b.phase) * 2.5;
-        const scale = easeOut(b.born) * (b.held ? 1.15 : 1);
+        const bob = b.held || b.dropping ? 0 : Affordance.bob(t, b.phase, 2.5);
+        const scale = easeOut(b.born) * Affordance.contactScale(b.held ? 1 : 0, 0.15);
         ctx.save();
         ctx.globalAlpha = easeOut(b.born);
         ctx.shadowColor = b.col; ctx.shadowBlur = b.held ? 24 : 10;
@@ -1334,6 +1555,36 @@
         ctx.beginPath(); ctx.arc(b.x, b.y + bob, b.r * 0.3 * scale, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      let cues;
+      if (this.held) {
+        const g = this.jarGeom(Engine.W, Engine.H, this.held.ci);
+        cues = [{ kind: "snap", x: g.x + g.w / 2, y: g.y + 30, r: 70, intensity: this.snapK, cursor: this.cursorName }];
+      } else if (this.sorted < 1) {
+        const b = this.beads.find((bead) => !bead.dropping);
+        if (b) {
+          const g = this.jarGeom(Engine.W, Engine.H, b.ci);
+          const tx = g.x + g.w / 2, ty = g.y + 30;
+          const dx = tx - b.x, dy = ty - b.y;
+          const len = Math.hypot(dx, dy) || 1;
+          cues = [
+            {
+              kind: "invitation", x: b.x, y: b.y, r: 40,
+              gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+            },
+            // halo fraco e constante — ensina a correspondência de cor sem competir com o convite
+            { kind: "snap", x: tx, y: ty, r: 70, intensity: 0.35 },
+          ];
+        } else {
+          cues = [{ cursor: this.cursorName }];
+        }
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       // demonstra arrastar a primeira miçanga até o pote da cor dela
@@ -1358,6 +1609,11 @@
       this.ribbon = 0;
       this.done = false;
       this.voice = null;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
       hint("Coloque a peça dentro da caixa — arraste-a para o centro.");
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
@@ -1365,6 +1621,7 @@
     onDown() {
       const b = this.box(Engine.W, Engine.H);
       if (this.done) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0 && !this.item.placed) {
         if (dist(px(), py(), this.item.x, this.item.y) < 60) {
           this.item.drag = true;
@@ -1431,10 +1688,34 @@
         }
       }
     },
-    update(dt) {
+    update(dt, p, t) {
+      const b = this.box(Engine.W, Engine.H);
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       // a peça segue o dedo com peso; solta, ela assenta devagar
       this.item.x = Engine.approach(this.item.x, this.item.tx, this.item.drag ? 20 : 8, dt);
       this.item.y = Engine.approach(this.item.y, this.item.ty, this.item.drag ? 20 : 8, dt);
+      // halo de encaixe: mesmo raio 130 que onUp() usa para aceitar a peça dentro da caixa
+      if (this.item.drag) {
+        this.snapK = clamp(1 - dist(this.item.x, this.item.y, cx, cy) / 130, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: nunca decidido em draw()
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else if (this.step === 0) {
+        this.cursorName = p.moved && dist(px(), py(), this.item.x, this.item.y) < 60 ? "grab" : "default";
+      } else if (this.step === 1) {
+        this.cursorName = p.moved && this.nearestFlap(b) >= 0 ? "grab" : "default";
+      } else if (this.step === 2) {
+        const near = p.moved && px() > b.x - 40 && px() < b.x + b.w + 40 && py() > b.y - 40 && py() < b.y + b.h + 40;
+        this.cursorName = near ? "grab" : "default";
+      } else {
+        this.cursorName = "default";
+      }
     },
     draw(ctx, W, H, t) {
       const b = this.box(W, H);
@@ -1452,12 +1733,13 @@
       ctx.fillStyle = "rgba(243,231,211,0.5)";
       ctx.fillRect(b.x, b.y, b.w, b.h);
       ctx.restore();
-      // item dentro
+      // item dentro — flutua de leve fora da caixa para se anunciar como pegável
       if (this.item.placed || this.step === 0) {
+        const floatY = (!this.item.drag && !this.item.placed) ? Affordance.bob(t, 0, 3) : 0;
         ctx.save();
-        ctx.translate(this.item.x, this.item.y);
+        ctx.translate(this.item.x, this.item.y + floatY);
         if (this.item.drag) ctx.rotate(Math.sin(t * 3) * 0.03);
-        const s = this.item.drag ? 1.06 : 1;
+        const s = (this.item.drag ? 1.06 : 1) * Affordance.contactScale(this.contact);
         ctx.scale(s, s);
         ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = this.item.drag ? 22 : 14;
         // representa um sabonete/vela
@@ -1508,6 +1790,47 @@
       else if (this.step === 1) prog = 0.25 + (this.flaps.reduce((a, b) => a + b, 0) / 4) * 0.5;
       else prog = 0.75 + this.ribbon * 0.25;
       progressRing(ctx, W, H, prog);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      if (this.done) return { cursor: "pointer" };
+      const b = this.box(Engine.W, Engine.H);
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      let cues;
+      if (this.step === 0 && !this.item.placed) {
+        const dx = cx - this.item.x, dy = cy - this.item.y;
+        const len = Math.hypot(dx, dy) || 1;
+        cues = [
+          {
+            kind: "invitation", x: this.item.x, y: this.item.y, r: 44,
+            gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+          },
+          { kind: "snap", x: cx, y: cy, r: 72, intensity: this.snapK },
+        ];
+      } else if (this.step === 1) {
+        const idx = this.flaps.findIndex((f) => f < 0.85);
+        if (idx >= 0) {
+          const pts = [{ x: b.x, y: cy }, { x: b.x + b.w, y: cy }, { x: cx, y: b.y }, { x: cx, y: b.y + b.h }];
+          const pt = pts[idx];
+          const dx = cx - pt.x, dy = cy - pt.y;
+          const len = Math.hypot(dx, dy) || 1;
+          cues = [{
+            kind: "invitation", x: pt.x, y: pt.y, r: 42,
+            gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+          }];
+        } else {
+          cues = [{ cursor: this.cursorName }];
+        }
+      } else if (this.step === 2 && this.ribbon < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: 46,
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done) return;
