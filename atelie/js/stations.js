@@ -1609,6 +1609,11 @@
       this.ribbon = 0;
       this.done = false;
       this.voice = null;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
       hint("Coloque a peça dentro da caixa — arraste-a para o centro.");
     },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
@@ -1616,6 +1621,7 @@
     onDown() {
       const b = this.box(Engine.W, Engine.H);
       if (this.done) { this.enter(Engine.W, Engine.H); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (this.step === 0 && !this.item.placed) {
         if (dist(px(), py(), this.item.x, this.item.y) < 60) {
           this.item.drag = true;
@@ -1682,10 +1688,34 @@
         }
       }
     },
-    update(dt) {
+    update(dt, p, t) {
+      const b = this.box(Engine.W, Engine.H);
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       // a peça segue o dedo com peso; solta, ela assenta devagar
       this.item.x = Engine.approach(this.item.x, this.item.tx, this.item.drag ? 20 : 8, dt);
       this.item.y = Engine.approach(this.item.y, this.item.ty, this.item.drag ? 20 : 8, dt);
+      // halo de encaixe: mesmo raio 130 que onUp() usa para aceitar a peça dentro da caixa
+      if (this.item.drag) {
+        this.snapK = clamp(1 - dist(this.item.x, this.item.y, cx, cy) / 130, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: nunca decidido em draw()
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else if (this.step === 0) {
+        this.cursorName = p.moved && dist(px(), py(), this.item.x, this.item.y) < 60 ? "grab" : "default";
+      } else if (this.step === 1) {
+        this.cursorName = p.moved && this.nearestFlap(b) >= 0 ? "grab" : "default";
+      } else if (this.step === 2) {
+        const near = p.moved && px() > b.x - 40 && px() < b.x + b.w + 40 && py() > b.y - 40 && py() < b.y + b.h + 40;
+        this.cursorName = near ? "grab" : "default";
+      } else {
+        this.cursorName = "default";
+      }
     },
     draw(ctx, W, H, t) {
       const b = this.box(W, H);
@@ -1703,12 +1733,13 @@
       ctx.fillStyle = "rgba(243,231,211,0.5)";
       ctx.fillRect(b.x, b.y, b.w, b.h);
       ctx.restore();
-      // item dentro
+      // item dentro — flutua de leve fora da caixa para se anunciar como pegável
       if (this.item.placed || this.step === 0) {
+        const floatY = (!this.item.drag && !this.item.placed) ? Affordance.bob(t, 0, 3) : 0;
         ctx.save();
-        ctx.translate(this.item.x, this.item.y);
+        ctx.translate(this.item.x, this.item.y + floatY);
         if (this.item.drag) ctx.rotate(Math.sin(t * 3) * 0.03);
-        const s = this.item.drag ? 1.06 : 1;
+        const s = (this.item.drag ? 1.06 : 1) * Affordance.contactScale(this.contact);
         ctx.scale(s, s);
         ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = this.item.drag ? 22 : 14;
         // representa um sabonete/vela
@@ -1759,6 +1790,47 @@
       else if (this.step === 1) prog = 0.25 + (this.flaps.reduce((a, b) => a + b, 0) / 4) * 0.5;
       else prog = 0.75 + this.ribbon * 0.25;
       progressRing(ctx, W, H, prog);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      if (this.done) return { cursor: "pointer" };
+      const b = this.box(Engine.W, Engine.H);
+      const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      let cues;
+      if (this.step === 0 && !this.item.placed) {
+        const dx = cx - this.item.x, dy = cy - this.item.y;
+        const len = Math.hypot(dx, dy) || 1;
+        cues = [
+          {
+            kind: "invitation", x: this.item.x, y: this.item.y, r: 44,
+            gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+          },
+          { kind: "snap", x: cx, y: cy, r: 72, intensity: this.snapK },
+        ];
+      } else if (this.step === 1) {
+        const idx = this.flaps.findIndex((f) => f < 0.85);
+        if (idx >= 0) {
+          const pts = [{ x: b.x, y: cy }, { x: b.x + b.w, y: cy }, { x: cx, y: b.y }, { x: cx, y: b.y + b.h }];
+          const pt = pts[idx];
+          const dx = cx - pt.x, dy = cy - pt.y;
+          const len = Math.hypot(dx, dy) || 1;
+          cues = [{
+            kind: "invitation", x: pt.x, y: pt.y, r: 42,
+            gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+          }];
+        } else {
+          cues = [{ cursor: this.cursorName }];
+        }
+      } else if (this.step === 2 && this.ribbon < 0.05) {
+        cues = [{
+          kind: "invitation", x: cx, y: cy, r: 46,
+          gesture: "drag", dir: { x: 1, y: 0 }, cursor: this.cursorName,
+        }];
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done) return;
