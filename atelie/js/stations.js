@@ -959,7 +959,16 @@
    *  CORTE DE PAPEL
    * ===================================================================== */
   Engine.register("papel", {
-    enter(W, H) { this.newSheet(W, H); this.voice = null; hint("Siga a linha pontilhada com a tesoura, de cima a baixo."); },
+    enter(W, H) {
+      this.newSheet(W, H);
+      this.voice = null;
+      // o cursor e o toque são estado de sessão, não de folha — ficam em enter(), não em newSheet()
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      hint("Siga a linha pontilhada com a tesoura, de cima a baixo.");
+    },
     exit() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     newSheet(W, H) {
       this.cut = 0;
@@ -973,6 +982,7 @@
     onDown() {
       const g = this.geom(Engine.W, Engine.H);
       if (this.done) { this.newSheet(Engine.W, Engine.H); hint("Outra folha, outra textura."); return; }
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       if (Math.abs(px() - this.guideX) < 50 && py() < g.y + this.cut * g.h + 60) {
         this.voice = ASMR.voice({ type: "highpass", freq: 2200, max: 0.5, color: 1.2, reverbSend: 0.3 });
       }
@@ -999,8 +1009,19 @@
     },
     onUp() { if (this.voice) { this.voice.stop(); this.voice = null; } },
     update(dt, p) {
+      const g = this.geom(Engine.W, Engine.H);
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       if (this.done) this.sep = Engine.approach(this.sep, 44, 4, dt);
       this.cutting = Engine.approach(this.cutting, p.down && this.voice ? 1 : 0, 10, dt);
+      // cursor: grab enquanto perto da linha-guia, dentro da faixa vertical da folha
+      if (this.done) {
+        this.cursorName = "pointer";
+      } else if (p.down) {
+        this.cursorName = "grabbing";
+      } else {
+        const near = p.moved && Math.abs(px() - this.guideX) < 65 && py() > g.y - 20 && py() < g.y + g.h + 20;
+        this.cursorName = near ? "grab" : "default";
+      }
     },
     draw(ctx, W, H, t) {
       const g = this.geom(W, H);
@@ -1027,9 +1048,32 @@
       ctx.strokeStyle = "rgba(232,160,90,0.55)"; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
       ctx.beginPath(); ctx.moveTo(this.guideX, splitTop); ctx.lineTo(this.guideX, g.y + g.h); ctx.stroke();
       ctx.restore();
-      // a tesourinha na ponta do corte
-      if (!this.done) drawScissors(ctx, this.guideX, splitTop, t, this.cutting);
+      // a tesourinha na ponta do corte — flutua de leve em repouso, firma durante o corte
+      if (!this.done) {
+        const bobY = this.cutting < 0.05 ? Affordance.bob(t, 0, 3) : 0;
+        drawScissors(ctx, this.guideX, splitTop + bobY, t, this.cutting);
+      }
       progressRing(ctx, W, H, this.cut);
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      const g = this.geom(Engine.W, Engine.H);
+      let cues;
+      if (this.done) {
+        cues = [{ cursor: this.cursorName }];
+      } else {
+        cues = [{ kind: "snap", x: this.guideX, y: g.y + g.h, r: 64, intensity: this.cut }];
+        if (this.cut < 0.05) {
+          cues.push({
+            kind: "invitation", x: this.guideX, y: g.y + 26, r: 44,
+            gesture: "drag", dir: { x: 0, y: 1 }, cursor: this.cursorName,
+          });
+        } else {
+          cues.push({ cursor: this.cursorName });
+        }
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       if (Engine.pointer.down || this.done || this.cut > 0.05) return;
