@@ -42,6 +42,10 @@ Nada se perde, nada falha.
   pétalas) e vinheteamento cinematográfico.
 - **UI invisível durante a criação** — sem botões poluindo a tela; a única dica
   recua sozinha e reaparece com um toque.
+- **Fluidez em tudo** — troca de cantinhos em crossfade (sem tela preta),
+  cartões que surgem em cascata, arrasto com inércia (as coisas "pesam" na mão),
+  ondinhas e brilho quente sob o dedo, vibração sutil no celular e uma chuva de
+  fagulhas douradas a cada peça concluída.
 
 ## Estrutura do projeto
 
