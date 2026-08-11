@@ -1418,6 +1418,11 @@
       this.beads = [];
       this.held = null;
       this.sorted = 0;
+      this.contact = 0;
+      this.contactX = 0;
+      this.contactY = 0;
+      this.cursorName = "default";
+      this.snapK = 0;
       for (let i = 0; i < 14; i++) this.spawnBead(W, H);
       hint("Leve cada miçanga ao potinho da sua cor. Sem pressa.");
     },
@@ -1440,6 +1445,7 @@
       });
     },
     onDown() {
+      this.contact = 1; this.contactX = px(); this.contactY = py();
       // pega a miçanga mais próxima sob o dedo (área generosa)
       let best = null, bd = 46;
       for (const b of this.beads) {
@@ -1474,7 +1480,8 @@
         }, 350);
       }
     },
-    update(dt) {
+    update(dt, p, t) {
+      this.contact = Engine.approach(this.contact, 0, 6, dt);
       for (const b of this.beads) {
         b.born = Math.min(1, (b.born || 0) + dt * 2.5);
         if (b.dropping && b.target) {
@@ -1487,6 +1494,20 @@
         }
       }
       for (const j of this.jars) j.pop = Engine.approach(j.pop, 0, 6, dt);
+      // halo de encaixe: mesmo limiar (Engine.H - 220) que onUp() usa para aceitar a soltura
+      if (this.held) {
+        this.snapK = clamp(1 - ((Engine.H - 220) - py()) / 160, 0, 1);
+      } else {
+        this.snapK = Engine.approach(this.snapK, 0, 6, dt);
+      }
+      // cursor: nunca decidido em draw()
+      if (this.held) {
+        this.cursorName = "grabbing";
+      } else if (p.moved && this.beads.some((b) => dist(px(), py(), b.x, b.y) < b.r + 20)) {
+        this.cursorName = "grab";
+      } else {
+        this.cursorName = "default";
+      }
     },
     draw(ctx, W, H, t) {
       // potes
@@ -1516,10 +1537,11 @@
         ctx.beginPath(); ctx.arc(g.x + g.w / 2, g.y - 14, 6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       });
-      // miçangas soltas — flutuam de leve, como se respirassem
+      // miçangas soltas — flutuam de leve, como se respirassem (multiplicadores do
+      // módulo Affordance, para prefers-reduced-motion ser respeitado de graça)
       for (const b of this.beads) {
-        const bob = b.held || b.dropping ? 0 : Math.sin(t * 1.3 + b.phase) * 2.5;
-        const scale = easeOut(b.born) * (b.held ? 1.15 : 1);
+        const bob = b.held || b.dropping ? 0 : Affordance.bob(t, b.phase, 2.5);
+        const scale = easeOut(b.born) * Affordance.contactScale(b.held ? 1 : 0, 0.15);
         ctx.save();
         ctx.globalAlpha = easeOut(b.born);
         ctx.shadowColor = b.col; ctx.shadowBlur = b.held ? 24 : 10;
@@ -1533,6 +1555,36 @@
         ctx.beginPath(); ctx.arc(b.x, b.y + bob, b.r * 0.3 * scale, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
+      Affordance.render(ctx, this.cue(), t);
+    },
+    cue() {
+      let cues;
+      if (this.held) {
+        const g = this.jarGeom(Engine.W, Engine.H, this.held.ci);
+        cues = [{ kind: "snap", x: g.x + g.w / 2, y: g.y + 30, r: 70, intensity: this.snapK, cursor: this.cursorName }];
+      } else if (this.sorted < 1) {
+        const b = this.beads.find((bead) => !bead.dropping);
+        if (b) {
+          const g = this.jarGeom(Engine.W, Engine.H, b.ci);
+          const tx = g.x + g.w / 2, ty = g.y + 30;
+          const dx = tx - b.x, dy = ty - b.y;
+          const len = Math.hypot(dx, dy) || 1;
+          cues = [
+            {
+              kind: "invitation", x: b.x, y: b.y, r: 40,
+              gesture: "drag", dir: { x: dx / len, y: dy / len }, cursor: this.cursorName,
+            },
+            // halo fraco e constante — ensina a correspondência de cor sem competir com o convite
+            { kind: "snap", x: tx, y: ty, r: 70, intensity: 0.35 },
+          ];
+        } else {
+          cues = [{ cursor: this.cursorName }];
+        }
+      } else {
+        cues = [{ cursor: this.cursorName }];
+      }
+      if (this.contact > 0.02) cues.push({ kind: "contact", x: this.contactX, y: this.contactY, k: this.contact });
+      return cues;
     },
     overlay(ctx, W, H, t) {
       // demonstra arrastar a primeira miçanga até o pote da cor dela
