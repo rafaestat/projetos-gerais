@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/*
+ * Paleta de dados validada (contraste + daltonismo) nos dois modos.
+ * Tudo abaixo é definido primeiro no modo claro; o modo escuro só
+ * redefine os mesmos papéis.
+ */
+:root {
+  color-scheme: light;
+
+  --plane: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #f2f1ed;
+
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+
+  /* Entradas x saídas: par divergente frio/quente, validado nos dois modos. */
+  --entrada: #2a78d6;
+  --saida: #e34948;
+  --serie-1: #2a78d6;
+
+  /* Estados — sempre acompanhados de ícone e rótulo, nunca só cor. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --texto-positivo: #006300;
+
+  --raio: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --plane: #0d0d0d;
+    --surface-1: #1a1a19;
+    --surface-2: #232322;
+
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+
+    --entrada: #3987e5;
+    --saida: #e66767;
+    --serie-1: #3987e5;
+
+    --texto-positivo: #0ca30c;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --plane: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #232322;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+
+  --entrada: #3987e5;
+  --saida: #e66767;
+  --serie-1: #3987e5;
+
+  --texto-positivo: #0ca30c;
+}
+
+@theme inline {
+  --color-plane: var(--plane);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--text-primary);
+  --color-ink-2: var(--text-secondary);
+  --color-ink-3: var(--text-muted);
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+  --color-entrada: var(--entrada);
+  --color-saida: var(--saida);
+  --color-positivo: var(--texto-positivo);
+  --color-alerta: var(--status-warning);
+  --color-critico: var(--status-critical);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Cartão padrão: superfície do gráfico + anel hairline, sem sombra pesada. */
+.cartao {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--raio);
+}
+
+.numeros-alinhados {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

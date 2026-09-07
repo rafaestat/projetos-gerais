@@ -1,0 +1,12 @@
+Categoria,Descricao_Padrao,Tipo
+Receita,Salários e rendimentos,Entrada
+Moradia,Energia água condomínio e reparos,Despesa Fixa
+Alimentação,Mercado restaurantes e delivery,Despesa Variável
+Transporte,Combustível Sem Parar Uber e manutenção,Despesa Variável
+Saúde,Consultas terapias farmácia e exames,Despesa Variável
+Educação,Mensalidades escolares e cursos,Despesa Fixa
+Assinaturas,Streaming nuvem IA e telefonia,Despesa Fixa
+Compras/Vestuário,Vestuário eletrônicos e compras online,Despesa Variável
+Lazer,Viagens hotéis passeios e eventos,Despesa Variável
+Saldo,Transferências cofrinhos CDB e faturas,Neutro
+Outros,Transações a revisar pelo usuário,Pendente
