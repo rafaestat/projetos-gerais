@@ -45,6 +45,29 @@ mais 60 s de corrida "de verdade" com um jogador-robô: sem erros, ~60 FPS.
 | Festa especial no **1º, 2º e 3º lugar**: pódio com os karts, coroa 👑, fogos de artifício, purpurina, balões, título arco-íris, música de festa, vibração e uma voz dizendo "Parabéns, Lara!" | ✅ |
 | A mesma festa ao ganhar troféu na Copa | ✅ |
 
+## ✅ Sprint 1.2 — Atalhos secretos + Modo Espaço (entregue)
+
+**Atalhos secretos (modo tradicional)** — um em cada pista, no meio da volta:
+
+| Pista | Atalho | Dicas para achar |
+|---|---|---|
+| 🌻 Campo Florido | 🚀 Foguete secreto: sobe ao espaço, vê a Terra, a Lua, o Sol e os planetas | placa amarela com seta 👉 + trilha de estrelinhas ✨ saindo da pista |
+| 🏖️ Praia do Sol | 🌊 Túnel do fundo do mar: peixes, baleia, polvo, algas, bolhas | idem |
+| 🍭 Reino dos Doces | 🌈 Escorregador nas nuvens: arco-íris, pássaros, borboletas, unicórnio | idem |
+| 🌈 Estrada Arco-Íris | 🚀 Foguete secreto | idem |
+
+Ao passar pela placa toca um sininho e aparece "Siga as estrelinhas!". A entrada fica
+fora da pista; quem entra volta **bem mais na frente** (é um atalho de verdade),
+caindo do céu com turbo. Os rivais nunca usam os atalhos.
+
+**🚀 Modo Espaço (Viagem Espacial)** — módulo separado, o tradicional continua igual:
+- 4 corridas, uma em cada planeta: 🌍 Terra → 🌕 Lua → 🔴 Marte → 🪐 Saturno.
+- Entre as corridas, viagem pelo espaço com o Sol ao fundo, estrelas na velocidade
+  da luz, o planeta de onde saiu ficando pequeno e o próximo crescendo.
+- Cada planeta tem sua gravidade: na Lua os pulos nas rampas são enormes e lentos.
+- Na Lua dá para ver a Terra no céu; em Saturno, o planeta gigante com anéis.
+- Troféu próprio: "Campeã do Espaço", guardado na estante da tela inicial.
+
 ## 🔜 Sprint 2 — "Teste com a Lara" (próxima)
 
 A Sprint 2 depende do **teste com a Lara**. Antes de programar mais, o ideal é ela
