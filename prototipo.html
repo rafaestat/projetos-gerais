@@ -125,9 +125,11 @@ input[type=text]:focus{border-bottom-color:var(--color-brand-strong);outline:non
 /* Movimento */
 .shake{animation:shake .45s}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 0 rgba(220,38,38,.9)}100%{box-shadow:0 0 0 24px rgba(220,38,38,0)}}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.shake,.sheet,.scrim,.btn{animation:none;transition:none}}
+@media (prefers-reduced-motion:reduce){.flash,.shake,.sheet,.scrim,.btn{animation:none;transition:none}}
 #hap-wrap{position:absolute;left:-9999px;opacity:0}
 </style>
 
@@ -143,17 +145,37 @@ const S={tier:1,onCall:true,answers:{},hadCall:false};
 const PIX={valor:'R$ 1.500,00',valorNum:'1500',nome:'Gabriel Costa Souza',primeiro:'Gabriel',ini:'GS',chave:'Celular •••• 4471'};
 
 // ---- Háptica: Android usa navigator.vibrate; iPhone usa o truque do switch ----
+// A web não controla a intensidade do motor, só a duração. "Forte" = pulsos longos, quase sem pausa, repetidos.
+function iosBurst(p){
+  // iPhone só dá toques curtos: transforma cada trecho "ligado" do padrão em uma rajada de toques a cada 50ms
+  const seq=Array.isArray(p)?p:[p]; let t=0;
+  seq.forEach((d,i)=>{ if(i%2===0){ for(let k=0;k<Math.max(1,Math.round(d/50));k++) setTimeout(()=>{try{hapLabel.click()}catch(e){}},t+k*50); } t+=d; });
+}
 function buzz(p){
   let ok=false; try{ if(hasVibrate) ok=navigator.vibrate(p); }catch(e){}
-  if(!ok){ const n=Array.isArray(p)?Math.ceil(p.length/2):1; for(let i=0;i<n;i++) setTimeout(()=>{try{hapLabel.click()}catch(e){}},i*140); }
+  if(!ok) iosBurst(p);
   $phone.classList.remove('shake'); void $phone.offsetWidth; $phone.classList.add('shake');
 }
-const H={tap:15,aviso:[80,60,80],pare:[400,120,400,120,700],tick:10,ok:[40,40,40]};
+const H={
+  tap:20, tick:25, ok:[60,60,60],
+  aviso:[300,80,300,80,300],                          // camada 1: três pulsos firmes
+  pare:[1000,100,1000,100,1000,100,1500],             // camada 2: ~4,8s quase contínuos
+  ligacao:[1200,200,1200,200,1200],                   // desliga a ligação: parece um telefone tocando
+};
+// Alarme: repete o padrão forte até a pessoa tocar na tela (máx. 3 vezes)
+let alarmTimer=0;
+function alarm(p,{vezes=3,intervalo=7000}={}){
+  stopAlarm(); let n=0;
+  const tocar=()=>{ buzz(p); $phone.classList.remove('flash'); void $phone.offsetWidth; $phone.classList.add('flash'); if(++n<vezes) alarmTimer=setTimeout(tocar,intervalo); };
+  tocar();
+  $phone.addEventListener('pointerdown',stopAlarm,{once:true});
+}
+function stopAlarm(){ clearTimeout(alarmTimer); alarmTimer=0; try{ hasVibrate&&navigator.vibrate(0); }catch(e){} }
 
 // ---- Utilidades ----
 const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
 const bar=(title='',back=true)=>`<div class="bar">${back?'<button aria-label="Voltar" data-back>‹</button>':''}<span>${title}</span></div>`;
-function render(html,cls=''){ $phone.className='phone '+cls; $phone.innerHTML=html; window.scrollTo(0,0);
+function render(html,cls=''){ stopAlarm(); $phone.className='phone '+cls; $phone.innerHTML=html; window.scrollTo(0,0);
   $phone.querySelectorAll('[data-back]').forEach(b=>b.onclick=inicio); }
 const dots=(n,t)=>`<div class="dots" role="img" aria-label="Passo ${n} de ${t}">${Array.from({length:t},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`;
 const opts=(id,list)=>`<div class="opts" data-q="${id}">${shuffle(list).map(([v,l])=>`<button class="opt" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div>`;
@@ -183,13 +205,13 @@ function inicio(){
     <button class="tier" id="t2"><b>Risco alto · 10%</b><small>Pare e confirme</small></button>
     <label class="toggle" for="call">Simular ligação ativa<input type="checkbox" id="call" ${S.onCall?'checked':''}></label>
     <div class="grow"></div>
-    <button class="btn text" id="test">Testar vibração</button>
+    <button class="btn text" id="test">Testar vibração forte</button>
     <p class="note">${hasVibrate?'Vibração ativa. Tire do silencioso.':'iPhone: só vibra no iOS 18+.'}</p>
   </section>`);
   $('call').onchange=e=>S.onCall=e.target.checked;
   $('t1').onclick=()=>{S.tier=1;revisao();};
   $('t2').onclick=()=>{S.tier=2;revisao();};
-  $('test').onclick=()=>buzz(H.pare);
+  $('test').onclick=()=>alarm(H.pare,{vezes:1});
 }
 
 function revisao(){
@@ -233,7 +255,6 @@ function camada1(){
 // ---- Camada 2: tela cheia ----
 const total2=()=>S.onCall||S.hadCall?5:4;
 function c2Pare(escalou){
-  buzz(H.pare);
   render(`${bar('',true)}<section class="screen">
     ${dots(1,total2())}
     <div class="bigicon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 16.5H2.5z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg></div>
@@ -245,6 +266,7 @@ function c2Pare(escalou){
     <button class="btn green" id="cancel">Não quero pagar</button>
     <button class="btn outline" id="next" disabled>Aguarde <span id="cd">5</span>s</button>
   </section>`,'stop');
+  alarm(H.pare);
   let n=5; const next=$('next');
   const iv=setInterval(()=>{ n--; if(n>0) $('cd').textContent=n; else { clearInterval(iv); next.disabled=false; next.textContent='Quero revisar'; } },1000);
   $('cancel').onclick=()=>{clearInterval(iv);cancelado();};
@@ -275,7 +297,6 @@ function c2Perguntas(){
 }
 
 function c2Ligacao(){
-  buzz(H.pare);
   render(`${bar('',true)}<section class="screen">
     ${dots(3,5)}
     <div class="bigicon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/><path d="M3 3l18 18"/></svg></div>
@@ -285,6 +306,7 @@ function c2Ligacao(){
     <button class="btn green" id="cancel">Não quero pagar</button>
     <button class="btn outline" id="hung">Já desliguei</button>
   </section>`,'stop');
+  alarm(H.ligacao);
   $('cancel').onclick=cancelado;
   $('hung').onclick=()=>{S.onCall=false;S.hadCall=true;c2Espera();};
 }
