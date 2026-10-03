@@ -1,364 +1,313 @@
 <title>Alerta de Golpe Pix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,900&display=swap">
 <style>
-/* Layout: um "celular" central de coluna única; cada etapa do fluxo é uma tela que substitui a anterior. */
+/* Layout: app de carteira digital, uma coluna; alertas leves sobem como bottom sheet, o alerta forte ocupa a tela toda. */
 :root{
-  --bg:#eef0f4; --surface:#ffffff; --ink:#14172b; --muted:#5b6078; --line:#d9dce6;
-  --accent:#1f3fbf; --accent-ink:#ffffff;
-  --danger:#c4122f; --danger-soft:#fde8eb; --warn:#b85c00; --warn-soft:#fff1e0; --ok:#137a46; --ok-soft:#e3f5ea;
-  --stop-bg:#14060a; --stop-ink:#fff4f5;
-  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
-  --body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --bg:#f4f6f5; --surface:#ffffff; --ink:#1b1f1d; --muted:#6a736f; --line:#e3e8e5;
+  --green:#11c76f; --green-ink:#ffffff; --green-soft:#e2f8ec;
+  --red:#e5243f; --red-soft:#fde7ea; --amber:#f29d0a; --amber-soft:#fff3dc;
+  --scrim:rgba(10,20,15,.55); --stop-bg:#e5243f; --stop-ink:#ffffff;
+  --font:"Nunito Sans",ui-sans-serif,system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0d0f18; --surface:#181b28; --ink:#eceef6; --muted:#9a9fb8; --line:#2b2f42;
-  --accent:#7d95ff; --accent-ink:#0d0f18;
-  --danger:#ff5c74; --danger-soft:#3a1219; --warn:#ffad5c; --warn-soft:#3a250f; --ok:#4fd18c; --ok-soft:#0f3020;
-  --stop-bg:#14060a; --stop-ink:#fff4f5; color-scheme:dark}}
+  --bg:#0f1311; --surface:#1a1f1c; --ink:#eef3f0; --muted:#98a39e; --line:#2a312d;
+  --green:#22d47f; --green-ink:#06130c; --green-soft:#12301f;
+  --red:#ff4d66; --red-soft:#3a1219; --amber:#ffb53a; --amber-soft:#3a2a0d;
+  --scrim:rgba(0,0,0,.65); --stop-bg:#c81d36; --stop-ink:#ffffff; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0d0f18; --surface:#181b28; --ink:#eceef6; --muted:#9a9fb8; --line:#2b2f42;
-  --accent:#7d95ff; --accent-ink:#0d0f18;
-  --danger:#ff5c74; --danger-soft:#3a1219; --warn:#ffad5c; --warn-soft:#3a250f; --ok:#4fd18c; --ok-soft:#0f3020;
-  --stop-bg:#14060a; --stop-ink:#fff4f5; color-scheme:dark}
+  --bg:#0f1311; --surface:#1a1f1c; --ink:#eef3f0; --muted:#98a39e; --line:#2a312d;
+  --green:#22d47f; --green-ink:#06130c; --green-soft:#12301f;
+  --red:#ff4d66; --red-soft:#3a1219; --amber:#ffb53a; --amber-soft:#3a2a0d;
+  --scrim:rgba(0,0,0,.65); --stop-bg:#c81d36; --stop-ink:#ffffff; color-scheme:dark}
 
 *{box-sizing:border-box}
-html,body{min-height:100%}
-body{background:var(--bg);color:var(--ink);font:400 17px/1.45 var(--body);padding:16px;padding-block:16px 32px}
-.phone{max-width:420px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:28px;min-height:min(780px,calc(100vh - 48px));display:flex;flex-direction:column;overflow:hidden;transition:background .3s}
-.screen{flex:1;display:flex;flex-direction:column;gap:18px;padding:28px 22px 24px}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--font);padding:16px;padding-block:12px 28px}
+.phone{position:relative;max-width:400px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:28px;min-height:min(760px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden}
+.bar{display:flex;align-items:center;gap:12px;padding:16px 18px 4px;font-weight:700}
+.bar button{background:none;border:0;color:var(--ink);font-size:1.4rem;line-height:1;padding:4px}
+.screen{flex:1;display:flex;flex-direction:column;gap:16px;padding:12px 20px 22px}
 .grow{flex:1}
-h1,h2{font-family:var(--display);font-weight:800;line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
-h1{font-size:1.9rem} h2{font-size:1.45rem}
+h1,h2{font-weight:900;line-height:1.12;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.75rem} h2{font-size:1.35rem}
 p{margin:0}
 .muted{color:var(--muted)}
-.eyebrow{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:5px 12px;border-radius:999px;font-weight:700;font-size:.85rem}
-.chip.warn{background:var(--warn-soft);color:var(--warn)}
-.chip.danger{background:var(--danger-soft);color:var(--danger)}
-.chip.ok{background:var(--ok-soft);color:var(--ok)}
-.btns{display:flex;flex-direction:column;gap:10px}
+.tag{align-self:flex-start;padding:4px 10px;border-radius:999px;font-weight:900;font-size:.78rem;letter-spacing:.02em}
+.tag.red{background:var(--red-soft);color:var(--red)} .tag.amber{background:var(--amber-soft);color:var(--amber)}
 button{font:inherit;cursor:pointer}
-.btn{border:0;border-radius:14px;padding:16px;font-weight:700;font-size:1.02rem;width:100%}
-.btn.primary{background:var(--accent);color:var(--accent-ink)}
-.btn.safe{background:var(--ok);color:var(--surface)}
-.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
-.btn.link{background:none;color:var(--muted);text-decoration:underline;padding:10px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn:focus-visible,.opt:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.card{border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px}
-.amount{font-family:var(--display);font-weight:800;font-size:2.4rem;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.row{display:flex;justify-content:space-between;gap:12px}
-.q{display:flex;flex-direction:column;gap:10px}
+.btn{border:0;border-radius:999px;padding:15px;font-weight:900;font-size:1rem;width:100%}
+.btn.green{background:var(--green);color:var(--green-ink)}
+.btn.outline{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.text{background:none;color:var(--muted);font-weight:700;padding:8px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.opt:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+.avatar{width:56px;height:56px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-weight:900;font-size:1.3rem}
+.who{display:flex;align-items:center;gap:12px}
+.amount{font-weight:900;font-size:2.6rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.list{border-top:1px solid var(--line)}
+.list div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.q{display:flex;flex-direction:column;gap:8px}
 .q-title{font-weight:700}
 .opts{display:flex;flex-wrap:wrap;gap:8px}
-.opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 14px;font-weight:700;flex:1 1 40%}
-.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
-textarea,input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px}
-textarea{min-height:110px;resize:vertical}
-.hint{font-size:.88rem;color:var(--muted)}
-.hint.bad{color:var(--danger);font-weight:700}
+.opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:10px 16px;font-weight:700}
+.opt[aria-pressed="true"]{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
+input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:0;border-bottom:2px solid var(--line);border-radius:10px 10px 0 0;padding:12px}
+input[type=text]:focus{border-bottom-color:var(--green)}
+.hint{font-size:.85rem;color:var(--muted)} .hint.bad{color:var(--red);font-weight:700}
 .hold{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-.hold .fill{position:absolute;inset:0;width:0;background:var(--line);transition:none}
+.hold .fill{position:absolute;inset:0;width:0;background:var(--line)}
 .hold span{position:relative}
-/* Tela de interrupção: único momento com fundo escuro forçado, em qualquer tema */
+.tier{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;background:var(--surface);color:var(--ink)}
+.tier small{color:var(--muted);font-weight:400}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700}
+.toggle input{width:22px;height:22px;accent-color:var(--green)}
+.note{font-size:.85rem;color:var(--muted);background:var(--bg);border-radius:12px;padding:10px 12px}
+/* Bottom sheet (camada 1) */
+.scrim{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:flex-end;animation:fade .2s}
+.sheet{width:100%;background:var(--surface);border-radius:24px 24px 0 0;padding:10px 20px 22px;display:flex;flex-direction:column;gap:16px;animation:up .25s ease-out}
+.grip{width:40px;height:4px;border-radius:2px;background:var(--line);align-self:center}
+/* Tela cheia de interrupção (camada 2) */
 .stop{background:var(--stop-bg);color:var(--stop-ink)}
-.stop .muted{color:#d9b8bd}
-.stop .btn.ghost{color:var(--stop-ink);border-color:#5a2a33}
-.stop blockquote{margin:0;border-left:3px solid #ff5c74;padding:4px 0 4px 14px;font-style:italic}
-.big-icon{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:2rem}
-.big-icon.danger{background:#ff5c74;color:#14060a}
-.big-icon.ok{background:var(--ok);color:var(--surface)}
-.big-icon.warn{background:var(--warn);color:var(--surface)}
-.timer{font-family:var(--display);font-weight:800;font-size:3rem;font-variant-numeric:tabular-nums}
-.progress{display:flex;gap:6px}
-.progress i{flex:1;height:4px;border-radius:2px;background:var(--line)}
-.progress i.on{background:var(--danger)}
-.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
-.toggle input{width:22px;height:22px;accent-color:var(--accent)}
-.status{font-size:.85rem;padding:10px 12px;border-radius:10px;background:var(--bg);color:var(--muted)}
+.stop .bar button{color:var(--stop-ink)}
+.stop .muted{color:rgba(255,255,255,.82)}
+.stop .btn.green{background:#ffffff;color:#b3142b}
+.stop .btn.outline{color:#ffffff;border-color:rgba(255,255,255,.5)}
+.bigicon{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:2.2rem}
+.stop .bigicon{background:#ffffff;color:#c81d36}
+.bigicon.ok{background:var(--green-soft);color:var(--green)}
+.bigicon.amber{background:var(--amber-soft);color:var(--amber)}
+.quote{background:rgba(0,0,0,.18);border-radius:14px;padding:12px 14px;font-weight:700}
+.timer{font-weight:900;font-size:3rem;font-variant-numeric:tabular-nums}
+.dots{display:flex;gap:6px} .dots i{flex:1;height:4px;border-radius:2px;background:var(--line)} .dots i.on{background:var(--red)}
+.stop .dots i{background:rgba(255,255,255,.3)} .stop .dots i.on{background:#ffffff}
 .shake{animation:shake .45s}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-@media (prefers-reduced-motion:reduce){.shake{animation:none}}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.shake,.sheet,.scrim{animation:none}}
 #hap-wrap{position:absolute;left:-9999px;opacity:0}
 </style>
 
-<!-- Truque de vibração no iPhone (iOS 18+): tocar no rótulo de um "switch" dispara o háptico do sistema -->
+<!-- iPhone (iOS 18+): tocar no rótulo de um "switch" dispara o háptico do sistema -->
 <div id="hap-wrap"><input type="checkbox" switch id="hap"><label for="hap" id="hap-label">h</label></div>
 
 <main class="phone" id="phone"></main>
 
 <script>
-const $phone = document.getElementById('phone');
-const hapLabel = document.getElementById('hap-label');
-const hasVibrate = typeof navigator.vibrate === 'function';
-const S = { tier: 1, onCall: true, answers: {}, steps: 0 };
-const PIX = { valor: 'R$ 1.500,00', valorNum: '1500', nome: 'Gabriel Costa Souza', primeiro: 'Gabriel', chave: 'Celular •••• 4471', banco: 'Banco Exemplo S.A.' };
+const $phone=document.getElementById('phone'), hapLabel=document.getElementById('hap-label');
+const hasVibrate=typeof navigator.vibrate==='function';
+const S={tier:1,onCall:true,answers:{},hadCall:false};
+const PIX={valor:'R$ 1.500,00',valorNum:'1500',nome:'Gabriel Costa Souza',primeiro:'Gabriel',ini:'GS',chave:'Celular •••• 4471'};
 
-// ---- Háptica -------------------------------------------------------------
-// Android/Chrome: navigator.vibrate(padrão). iPhone: não tem Vibration API, usamos o truque do switch (1 toque por pulso).
-function buzz(pattern){
-  let ok = false;
-  try { if (hasVibrate) ok = navigator.vibrate(pattern); } catch(e){}
-  if (!ok) {
-    const pulses = Array.isArray(pattern) ? Math.ceil(pattern.length/2) : 1;
-    for (let i=0;i<pulses;i++) setTimeout(()=>{ try{ hapLabel.click(); }catch(e){} }, i*140);
-  }
+// ---- Háptica: Android usa navigator.vibrate; iPhone usa o truque do switch ----
+function buzz(p){
+  let ok=false; try{ if(hasVibrate) ok=navigator.vibrate(p); }catch(e){}
+  if(!ok){ const n=Array.isArray(p)?Math.ceil(p.length/2):1; for(let i=0;i<n;i++) setTimeout(()=>{try{hapLabel.click()}catch(e){}},i*140); }
   $phone.classList.remove('shake'); void $phone.offsetWidth; $phone.classList.add('shake');
 }
-const HAPTIC = {
-  tap: 15,
-  aviso: [80, 60, 80],                       // camada 1: atenção leve
-  pare: [400, 120, 400, 120, 700],           // camada 2: interrupção forte
-  tick: 10,
-  ok: [40, 40, 40],
-};
+const H={tap:15,aviso:[80,60,80],pare:[400,120,400,120,700],tick:10,ok:[40,40,40]};
 
-// ---- Utilidades ----------------------------------------------------------
-const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
-function render(html, cls=''){ $phone.className = 'phone ' + cls; $phone.innerHTML = `<section class="screen">${html}</section>`; $phone.scrollTop = 0; window.scrollTo(0,0); }
-function progress(n,total){ return `<div class="progress" aria-label="Etapa ${n} de ${total}">${Array.from({length:total},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`; }
-function bindOpts(root=document){
-  root.querySelectorAll('.opts').forEach(g=>g.addEventListener('click',e=>{
+// ---- Utilidades ----
+const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+const bar=(title='',back=true)=>`<div class="bar">${back?'<button aria-label="Voltar" data-back>‹</button>':''}<span>${title}</span></div>`;
+function render(html,cls=''){ $phone.className='phone '+cls; $phone.innerHTML=html; window.scrollTo(0,0);
+  $phone.querySelectorAll('[data-back]').forEach(b=>b.onclick=inicio); }
+const dots=(n,t)=>`<div class="dots" aria-label="Passo ${n} de ${t}">${Array.from({length:t},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`;
+const opts=(id,list)=>`<div class="opts" data-q="${id}">${shuffle(list).map(([v,l])=>`<button class="opt" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div>`;
+function bindOpts(onChange){
+  $phone.querySelectorAll('.opts').forEach(g=>g.addEventListener('click',e=>{
     const b=e.target.closest('.opt'); if(!b) return;
     g.querySelectorAll('.opt').forEach(o=>o.setAttribute('aria-pressed','false'));
-    b.setAttribute('aria-pressed','true'); S.answers[g.dataset.q]=b.dataset.v; buzz(HAPTIC.tap);
-    g.dispatchEvent(new CustomEvent('answered',{bubbles:true}));
+    b.setAttribute('aria-pressed','true'); S.answers[g.dataset.q]=b.dataset.v; buzz(H.tap); onChange&&onChange();
   }));
 }
-// Botão "segure para continuar": exige 2s de pressão, com ticks hápticos
-function holdButton(el, ms, done){
-  const fill = el.querySelector('.fill'); let t0=0, raf=0, last=0;
-  const step = ts => { const p=Math.min(1,(ts-t0)/ms); fill.style.width=(p*100)+'%';
-    const q=Math.floor(p*4); if(q>last){ last=q; buzz(HAPTIC.tick); }
-    if(p>=1){ stop(); done(); } else raf=requestAnimationFrame(step); };
-  const start = e => { e.preventDefault(); t0=performance.now(); last=0; raf=requestAnimationFrame(step); };
-  const stop = () => { cancelAnimationFrame(raf); fill.style.width='0'; };
+function holdButton(el,ms,done){
+  const fill=el.querySelector('.fill'); let t0=0,raf=0,last=0;
+  const step=ts=>{const p=Math.min(1,(ts-t0)/ms); fill.style.width=(p*100)+'%'; const q=Math.floor(p*4); if(q>last){last=q;buzz(H.tick);} if(p>=1){stop();done();} else raf=requestAnimationFrame(step);};
+  const start=e=>{ if(el.disabled) return; e.preventDefault(); t0=performance.now(); last=0; raf=requestAnimationFrame(step); };
+  const stop=()=>{cancelAnimationFrame(raf); fill.style.width='0';};
   el.addEventListener('pointerdown',start); ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,stop));
-  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') done(); });
+  el.addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&!el.disabled) done(); });
 }
+const $=id=>document.getElementById(id);
 
-// ---- Telas ---------------------------------------------------------------
+// ---- Início ----
 function inicio(){
-  render(`
-    <span class="eyebrow">Protótipo · alerta de golpe</span>
-    <h1>Escolha o nível de risco para simular</h1>
-    <p class="muted">O alerta muda conforme a probabilidade de golpe que o modelo calcula para este Pix.</p>
-    <div class="btns">
-      <button class="btn ghost" id="t1"><b>Camada 1</b> · risco ~1% · pausa consciente</button>
-      <button class="btn ghost" id="t2"><b>Camada 2</b> · risco ~10% · pare e confirme</button>
-    </div>
-    <label class="toggle" for="call"><span>Simular <b>ligação ativa</b> durante o Pix</span><input type="checkbox" id="call" ${S.onCall?'checked':''}></label>
+  S.answers={}; S.hadCall=false;
+  render(`${bar('Protótipo',false)}<section class="screen">
+    <h1>Simular alerta de golpe</h1>
+    <button class="tier" id="t1"><b>Risco baixo · 1%</b><small>Pausa rápida</small></button>
+    <button class="tier" id="t2"><b>Risco alto · 10%</b><small>Pare e confirme</small></button>
+    <label class="toggle" for="call">Simular ligação ativa<input type="checkbox" id="call" ${S.onCall?'checked':''}></label>
     <div class="grow"></div>
-    <button class="btn link" id="test">Testar vibração</button>
-    <p class="status" id="st">${hasVibrate
-      ? 'Este navegador aceita vibração. No Android, deixe o celular fora do modo silencioso/“não perturbe”.'
-      : 'Este navegador não tem a API de vibração (iPhone). Usamos o háptico do sistema, que funciona no iOS 18 ou mais novo.'}</p>
-  `);
-  document.getElementById('call').onchange = e => S.onCall = e.target.checked;
-  document.getElementById('t1').onclick = () => { S.tier=1; S.answers={}; revisao(); };
-  document.getElementById('t2').onclick = () => { S.tier=2; S.answers={}; revisao(); };
-  document.getElementById('test').onclick = () => buzz(HAPTIC.pare);
+    <button class="btn text" id="test">Testar vibração</button>
+    <p class="note">${hasVibrate?'Vibração ativa. Tire do silencioso.':'iPhone: só vibra no iOS 18+.'}</p>
+  </section>`);
+  $('call').onchange=e=>S.onCall=e.target.checked;
+  $('t1').onclick=()=>{S.tier=1;revisao();};
+  $('t2').onclick=()=>{S.tier=2;revisao();};
+  $('test').onclick=()=>buzz(H.pare);
 }
 
 function revisao(){
-  render(`
-    <span class="eyebrow">Pix · revisão</span>
-    <div class="card">
-      <span class="muted">Você vai enviar</span>
-      <span class="amount">${PIX.valor}</span>
-      <div class="row"><span class="muted">Para</span><b>${PIX.nome}</b></div>
-      <div class="row"><span class="muted">Chave</span><span>${PIX.chave}</span></div>
-      <div class="row"><span class="muted">Instituição</span><span>${PIX.banco}</span></div>
-    </div>
+  render(`${bar('Pix')}<section class="screen">
+    <div class="who"><div class="avatar">${PIX.ini}</div><div><b>${PIX.nome}</b><p class="muted">${PIX.chave}</p></div></div>
+    <div><p class="muted">Valor</p><div class="amount">${PIX.valor}</div></div>
+    <div class="list"><div><span class="muted">Quando</span><b>Agora</b></div><div><span class="muted">Mensagem</span><span>—</span></div></div>
     <div class="grow"></div>
-    <button class="btn primary" id="go">Enviar Pix</button>
-    <button class="btn link" id="back">Voltar ao início</button>
-  `);
-  document.getElementById('go').onclick = () => S.tier===1 ? camada1() : c2Pare();
-  document.getElementById('back').onclick = inicio;
+    <button class="btn green" id="go">Pagar</button>
+  </section>`);
+  $('go').onclick=()=>S.tier===1?camada1():c2Pare();
 }
 
-// ---- Camada 1 ------------------------------------------------------------
-const POOL1 = [
-  { id:'falando', t:'Alguém está falando com você agora enquanto faz este Pix?', o:[['sim','Sim'],['nao','Não']], risk:'sim' },
-  { id:'antes',   t:'Você já mandou Pix para essa pessoa antes?', o:[['sim','Sim'],['nao','Não, é a primeira vez']], risk:'nao' },
-  { id:'segredo', t:'Alguém pediu para você não contar sobre este Pix?', o:[['sim','Sim'],['nao','Não']], risk:'sim' },
-  { id:'pressa',  t:'Disseram que precisa ser feito agora, com urgência?', o:[['sim','Sim'],['nao','Não']], risk:'sim' },
+// ---- Camada 1: bottom sheet curto ----
+const POOL1=[
+  {id:'falando',t:'Tem alguém falando com você agora?',o:[['sim','Sim'],['nao','Não']],risk:'sim'},
+  {id:'antes',t:`Já fez Pix pro ${PIX.primeiro}?`,o:[['sim','Já'],['nao','Primeira vez']],risk:'nao'},
+  {id:'segredo',t:'Pediram pra você não contar?',o:[['sim','Sim'],['nao','Não']],risk:'sim'},
+  {id:'pressa',t:'Disseram que é urgente?',o:[['sim','Sim'],['nao','Não']],risk:'sim'},
 ];
 function camada1(){
-  const qs = shuffle(POOL1).slice(0,2);
-  buzz(HAPTIC.aviso);
-  render(`
-    <span class="chip warn">⏸ Pausa rápida</span>
-    <h2>Antes de enviar ${PIX.valor} para ${PIX.primeiro}</h2>
-    <p class="muted">Responda com sinceridade. Ninguém do banco vai te ligar para pedir estas respostas.</p>
-    ${qs.map(q=>`<div class="q"><span class="q-title">${q.t}</span>
-      <div class="opts" data-q="${q.id}">${shuffle(q.o).map(([v,l])=>`<button class="opt" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div></div>`).join('')}
-    <div class="grow"></div>
-    <button class="btn safe" id="cancel">Cancelar e revisar</button>
-    <button class="btn ghost hold" id="cont" disabled><span class="fill"></span><span>Segure para continuar</span></button>
-  `);
-  const cont = document.getElementById('cont');
-  $phone.addEventListener('answered', () => { if (qs.every(q=>S.answers[q.id])) cont.disabled=false; });
-  bindOpts($phone);
-  document.getElementById('cancel').onclick = cancelado;
-  holdButton(cont, 2000, () => {
-    if (cont.disabled) return;
-    const flag = qs.some(q=>S.answers[q.id]===q.risk);
-    if (flag) { S.tier=2; c2Pare(true); } else enviado();
-  });
+  const qs=shuffle(POOL1).slice(0,2);
+  revisao();
+  buzz(H.aviso);
+  const scrim=document.createElement('div'); scrim.className='scrim';
+  scrim.innerHTML=`<div class="sheet" role="dialog" aria-label="Pausa rápida">
+    <div class="grip"></div>
+    <span class="tag amber">PAUSA RÁPIDA</span>
+    <h2>Só confirmando ✋</h2>
+    ${qs.map(q=>`<div class="q"><span class="q-title">${q.t}</span>${opts(q.id,q.o)}</div>`).join('')}
+    <button class="btn green" id="cancel">Cancelar Pix</button>
+    <button class="btn outline hold" id="cont" disabled><span class="fill"></span><span>Segure pra continuar</span></button>
+  </div>`;
+  $phone.appendChild(scrim);
+  const cont=$('cont');
+  bindOpts(()=>{ if(qs.every(q=>S.answers[q.id])) cont.disabled=false; });
+  $('cancel').onclick=cancelado;
+  holdButton(cont,2000,()=>{ qs.some(q=>S.answers[q.id]===q.risk) ? (S.tier=2,c2Pare(true)) : enviado(); });
 }
 
-// ---- Camada 2 ------------------------------------------------------------
-const TOTAL2 = () => S.onCall ? 5 : 4;
+// ---- Camada 2: tela cheia ----
+const total2=()=>S.onCall||S.hadCall?5:4;
 function c2Pare(escalou){
-  buzz(HAPTIC.pare);
-  render(`
-    ${progress(1,TOTAL2())}
-    <div class="big-icon danger" aria-hidden="true">!</div>
-    <h1>Pare um segundo.</h1>
-    <p>${escalou ? 'Pelas suas respostas, este' : 'Este'} Pix tem o mesmo padrão de golpes que estão acontecendo agora.</p>
-    <p class="muted">Golpistas costumam dizer:</p>
-    <blockquote>“Não desliga. O banco vai te fazer umas perguntas, responde que é pra um conhecido.”</blockquote>
-    <blockquote>“É urgente, depois eu te explico.”</blockquote>
-    <p><b>Se alguém te disse o que responder nesta tela, isso é golpe.</b></p>
+  buzz(H.pare);
+  render(`${bar('',true)}<section class="screen">
+    ${dots(1,total2())}
+    <div class="bigicon">!</div>
+    <h1>Opa, calma aí.</h1>
+    <p>${escalou?'Pelas suas respostas, isso':'Isso'} parece golpe.</p>
+    <div class="quote">“Não desliga, responde que é pra um conhecido.”</div>
+    <p><b>Alguém te disse o que responder aqui? É golpe.</b></p>
     <div class="grow"></div>
-    <button class="btn safe" id="cancel">Não quero transferir</button>
-    <button class="btn ghost" id="next" disabled>Ler de novo (<span id="cd">6</span>s)</button>
-  `, 'stop');
-  let n=6; const cd=document.getElementById('cd'), next=document.getElementById('next');
-  const iv=setInterval(()=>{ n--; cd.textContent=n; if(n<=0){ clearInterval(iv); next.disabled=false; next.textContent='Quero revisar este Pix'; } },1000);
-  document.getElementById('cancel').onclick = ()=>{ clearInterval(iv); cancelado(); };
-  next.onclick = ()=>{ clearInterval(iv); c2Perguntas(); };
+    <button class="btn green" id="cancel">Não quero pagar</button>
+    <button class="btn outline" id="next" disabled>Aguarde <span id="cd">5</span>s</button>
+  </section>`,'stop');
+  let n=5; const next=$('next');
+  const iv=setInterval(()=>{ n--; if(n>0) $('cd').textContent=n; else { clearInterval(iv); next.disabled=false; next.textContent='Quero revisar'; } },1000);
+  $('cancel').onclick=()=>{clearInterval(iv);cancelado();};
+  next.onclick=()=>{clearInterval(iv);c2Perguntas();};
 }
 
-const GENERIC = /^(reconhe[cç]o|conhe[cç]o|é meu amigo|e meu amigo|é pra um conhecido|confio|pode mandar|ok|sim)\b/i;
-const SCRIPT  = /(central|advogad|urgente|urgência|segredo|não contar|nao contar|gerente|funcion[aá]rio do banco|prêmio|premio|investimento garantido|desbloque)/i;
+const GENERIC=/^(reconhe[cç]o|conhe[cç]o|é meu amigo|e meu amigo|é conhecido|confio|ok|sim|pode)\b/i;
 function c2Perguntas(){
-  render(`
-    ${progress(2,TOTAL2())}
-    <span class="chip danger">Suspeita de golpe</span>
-    <h2>Conte o que aconteceu, com suas palavras</h2>
-    <div class="q"><span class="q-title">Como você recebeu esse pedido?</span>
-      <div class="opts" data-q="canal">${shuffle([['whats','WhatsApp'],['lig','Ligação'],['sms','SMS ou e-mail'],['pess','Pessoalmente']]).map(([v,l])=>`<button class="opt" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div></div>
-    <div class="q"><span class="q-title">Você <u>ouviu a voz</u> do ${PIX.primeiro} em um número que <u>já estava salvo</u> no seu celular?</span>
-      <div class="opts" data-q="voz">${shuffle([['sim','Sim'],['nao','Não'],['nsei','Não sei']]).map(([v,l])=>`<button class="opt" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div></div>
-    <div class="q"><label class="q-title" for="why">Para que é esse dinheiro e como você conhece o ${PIX.primeiro}?</label>
-      <textarea id="why" maxlength="500" placeholder="Ex.: é o meu sobrinho, estou pagando a metade do presente da minha mãe que ele comprou ontem."></textarea>
-      <span class="hint" id="h">Mínimo de 40 caracteres · 0/500</span></div>
+  render(`${bar('Suspeita de golpe')}<section class="screen">
+    ${dots(2,total2())}
+    <h2>Rapidinho, sobre o ${PIX.primeiro}</h2>
+    <div class="q"><span class="q-title">Como ele te pediu?</span>${opts('canal',[['whats','WhatsApp'],['lig','Ligação'],['sms','SMS'],['pess','Pessoalmente']])}</div>
+    <div class="q"><span class="q-title">Você ouviu a voz dele num número salvo?</span>${opts('voz',[['sim','Sim'],['nao','Não'],['nsei','Não sei']])}</div>
+    <div class="q"><label class="q-title" for="why">O Pix é pra quê?</label>
+      <input type="text" id="why" maxlength="140" placeholder="Ex.: minha parte do presente da mãe" autocomplete="off">
+      <span class="hint" id="h">Escreva com suas palavras</span></div>
     <div class="grow"></div>
-    <button class="btn safe" id="cancel">Não quero transferir</button>
-    <button class="btn ghost" id="next" disabled>Continuar</button>
-  `);
-  bindOpts($phone);
-  const why=document.getElementById('why'), h=document.getElementById('h'), next=document.getElementById('next');
-  const check=()=>{
-    const v=why.value.trim(); let msg=`Mínimo de 40 caracteres · ${v.length}/500`, bad=false;
-    if (v.length && GENERIC.test(v) && v.length<60){ msg='Isso é genérico demais. Conte quem é a pessoa e o motivo do Pix.'; bad=true; }
-    h.textContent=msg; h.className='hint'+(bad?' bad':'');
-    next.disabled = !(v.length>=40 && !bad && S.answers.canal && S.answers.voz);
-  };
-  why.addEventListener('input',check); $phone.addEventListener('answered',check);
-  document.getElementById('cancel').onclick = cancelado;
-  next.onclick = ()=>{
-    const v=why.value;
-    const risky = SCRIPT.test(v) || S.answers.voz!=='sim' || S.answers.canal==='lig';
-    S.answers.risky = risky;
-    if (risky) buzz(HAPTIC.aviso);
-    S.onCall ? c2Ligacao() : c2Espera();
-  };
+    <button class="btn green" id="cancel">Não quero pagar</button>
+    <button class="btn outline" id="next" disabled>Continuar</button>
+  </section>`);
+  const why=$('why'),h=$('h'),next=$('next');
+  const check=()=>{ const v=why.value.trim(), bad=v.length>0&&GENERIC.test(v)&&v.length<40;
+    h.textContent=bad?'Genérico demais. Pra quê é o dinheiro?':'Escreva com suas palavras'; h.className='hint'+(bad?' bad':'');
+    next.disabled=!(v.length>=15&&!bad&&S.answers.canal&&S.answers.voz); };
+  why.oninput=check; bindOpts(check);
+  $('cancel').onclick=cancelado;
+  next.onclick=()=>{ if(S.answers.voz!=='sim') buzz(H.aviso); S.onCall?c2Ligacao():c2Espera(); };
 }
 
 function c2Ligacao(){
-  buzz(HAPTIC.pare);
-  render(`
-    ${progress(3,TOTAL2())}
-    <div class="big-icon danger" aria-hidden="true">☎</div>
-    <h1>Você está em uma ligação agora.</h1>
-    <p>Desligue para continuar. Se for alguém de verdade, a pessoa vai entender.</p>
-    <p class="muted">O banco nunca pede que você fique na linha enquanto faz um Pix.</p>
+  buzz(H.pare);
+  render(`${bar('',true)}<section class="screen">
+    ${dots(3,5)}
+    <div class="bigicon">☎</div>
+    <h1>Desliga a ligação.</h1>
+    <p class="muted">O banco nunca pede pra ficar na linha durante um Pix.</p>
     <div class="grow"></div>
-    <button class="btn safe" id="cancel">Não quero transferir</button>
-    <button class="btn ghost" id="hung">Já desliguei <span class="muted">(simulação)</span></button>
-  `, 'stop');
-  document.getElementById('cancel').onclick = cancelado;
-  document.getElementById('hung').onclick = ()=>{ S.onCall=false; S._hadCall=true; c2Espera(); };
+    <button class="btn green" id="cancel">Não quero pagar</button>
+    <button class="btn outline" id="hung">Já desliguei</button>
+  </section>`,'stop');
+  $('cancel').onclick=cancelado;
+  $('hung').onclick=()=>{S.onCall=false;S.hadCall=true;c2Espera();};
 }
 
 function c2Espera(){
-  const total = S._hadCall ? 5 : 4, step = S._hadCall ? 4 : 3;
-  const at = new Date(Date.now()+30*60000);
-  const hhmm = at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  buzz(HAPTIC.aviso);
-  render(`
-    ${progress(step,total)}
-    <span class="chip warn">Pix agendado</span>
-    <h2>Seu Pix sai às ${hhmm}. Use esse tempo para confirmar.</h2>
-    <div class="timer" id="tm" aria-live="polite">30:00</div>
-    <p class="muted">Você pode cancelar até lá. Nesse tempo, confirme por outro caminho:</p>
-    <div class="btns">
-      <button class="btn ghost" id="callc">Ligar para o ${PIX.primeiro} no número salvo</button>
-      <button class="btn ghost" id="guard">Avisar meu contato de confiança</button>
-    </div>
-    <p class="status" id="st" hidden></p>
+  const t=total2(), step=t===5?4:3;
+  const hhmm=new Date(Date.now()+30*60000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  buzz(H.aviso);
+  render(`${bar('Pix agendado')}<section class="screen">
+    ${dots(step,t)}
+    <div class="bigicon amber">⏱</div>
+    <h2>Seu Pix sai às ${hhmm}</h2>
+    <div class="timer" id="tm" aria-live="off">30:00</div>
+    <p class="muted">Liga pro ${PIX.primeiro} no número que você já tem.</p>
+    <button class="btn outline" id="callc">Ligar pro ${PIX.primeiro}</button>
+    <p class="note" id="st" hidden></p>
     <div class="grow"></div>
-    <button class="btn safe" id="cancel">Cancelar Pix</button>
-    <button class="btn link" id="skip">Pular espera (só no protótipo)</button>
-  `);
-  let s=1800; const tm=document.getElementById('tm'), st=document.getElementById('st');
+    <button class="btn green" id="cancel">Cancelar Pix</button>
+    <button class="btn text" id="skip">Pular espera (protótipo)</button>
+  </section>`);
+  let s=1800; const tm=$('tm');
   const iv=setInterval(()=>{ s--; tm.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; },1000);
-  document.getElementById('callc').onclick=()=>{ buzz(HAPTIC.tap); st.hidden=false; st.textContent='Abriria os seus contatos no número do Gabriel que já estava salvo. O app nunca sugere um número novo.'; };
-  document.getElementById('guard').onclick=()=>{ buzz(HAPTIC.tap); st.hidden=false; st.textContent='Seu contato de confiança recebeu uma notificação para aprovar ou barrar este Pix.'; };
-  document.getElementById('cancel').onclick=()=>{ clearInterval(iv); cancelado(); };
-  document.getElementById('skip').onclick=()=>{ clearInterval(iv); c2Final(step+1,total); };
+  $('callc').onclick=()=>{ buzz(H.tap); $('st').hidden=false; $('st').textContent='Abre seus contatos. Nunca um número novo.'; };
+  $('cancel').onclick=()=>{clearInterval(iv);cancelado();};
+  $('skip').onclick=()=>{clearInterval(iv);c2Final(step+1,t);};
 }
 
-function c2Final(step,total){
-  buzz(HAPTIC.aviso);
-  render(`
-    ${progress(step,total)}
-    <span class="chip danger">Última confirmação</span>
-    <h2>Se ainda quiser enviar, digite os dados de memória</h2>
-    <p class="muted">Sem copiar e colar. Isso garante que é você quem está decidindo.</p>
-    <div class="q"><label class="q-title" for="nm">Primeiro nome de quem vai receber</label><input type="text" id="nm" autocomplete="off" onpaste="return false"></div>
-    <div class="q"><label class="q-title" for="vl">Valor do Pix (só números)</label><input type="text" id="vl" inputmode="numeric" autocomplete="off" onpaste="return false"></div>
+function c2Final(step,t){
+  buzz(H.aviso);
+  render(`${bar('Confirmar Pix')}<section class="screen">
+    ${dots(step,t)}
+    <h2>Confirme de memória</h2>
+    <div class="q"><label class="q-title" for="nm">Primeiro nome</label><input type="text" id="nm" autocomplete="off" onpaste="return false"></div>
+    <div class="q"><label class="q-title" for="vl">Valor (R$)</label><input type="text" id="vl" inputmode="numeric" autocomplete="off" onpaste="return false"></div>
     <div class="grow"></div>
-    <button class="btn safe" id="cancel">Não quero transferir</button>
-    <button class="btn ghost hold" id="cont" disabled><span class="fill"></span><span>Segure para enviar</span></button>
-  `);
-  const nm=document.getElementById('nm'), vl=document.getElementById('vl'), cont=document.getElementById('cont');
+    <button class="btn green" id="cancel">Não quero pagar</button>
+    <button class="btn outline hold" id="cont" disabled><span class="fill"></span><span>Segure pra pagar</span></button>
+  </section>`);
+  const nm=$('nm'),vl=$('vl'),cont=$('cont');
   const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase();
-  const upd=()=>{ cont.disabled = !(norm(nm.value)===norm(PIX.primeiro) && (vl.value.replace(/\D/g,'')===PIX.valorNum || vl.value.replace(/\D/g,'')===PIX.valorNum+'00')); };
+  const upd=()=>{ const d=vl.value.replace(/\D/g,''); cont.disabled=!(norm(nm.value)===norm(PIX.primeiro)&&(d===PIX.valorNum||d===PIX.valorNum+'00')); };
   nm.oninput=upd; vl.oninput=upd;
-  document.getElementById('cancel').onclick=cancelado;
-  holdButton(cont,2500,()=>{ if(!cont.disabled) enviado(); });
+  $('cancel').onclick=cancelado;
+  holdButton(cont,2500,enviado);
 }
 
-// ---- Resultados ----------------------------------------------------------
+// ---- Resultados ----
 function cancelado(){
-  buzz(HAPTIC.ok);
-  render(`
+  buzz(H.ok);
+  render(`<section class="screen"><div class="grow"></div>
+    <div class="bigicon ok">✓</div>
+    <h1>Pix cancelado</h1>
+    <p class="muted">Seu dinheiro tá seguro.</p>
     <div class="grow"></div>
-    <div class="big-icon ok" aria-hidden="true">✓</div>
-    <h1>Pix cancelado. Seu dinheiro está seguro.</h1>
-    <p class="muted">Se alguém estava falando com você, pare de responder e ligue para o banco pelo número do verso do cartão.</p>
-    <div class="grow"></div>
-    <button class="btn primary" id="again">Simular de novo</button>
-  `);
-  document.getElementById('again').onclick=inicio;
+    <button class="btn green" id="again">Simular de novo</button></section>`);
+  $('again').onclick=inicio;
 }
 function enviado(){
-  buzz(HAPTIC.tap);
-  render(`
+  buzz(H.tap);
+  render(`<section class="screen"><div class="grow"></div>
+    <div class="bigicon amber">↗</div>
+    <h1>Pix enviado</h1>
+    <p class="muted">Caiu em golpe? Conteste o Pix no app o quanto antes.</p>
     <div class="grow"></div>
-    <div class="big-icon warn" aria-hidden="true">↗</div>
-    <h1>Pix de ${PIX.valor} enviado para ${PIX.primeiro}</h1>
-    <p class="muted">Se perceber que foi golpe, use “Contestar Pix” (MED) em até 80 dias. Quanto antes, maior a chance de recuperar.</p>
-    <div class="grow"></div>
-    <button class="btn primary" id="again">Simular de novo</button>
-  `);
-  document.getElementById('again').onclick=inicio;
+    <button class="btn green" id="again">Simular de novo</button></section>`);
+  $('again').onclick=inicio;
 }
 
 inicio();
