@@ -242,6 +242,7 @@
     count: (go) => tone(go ? 880 : 440, go ? 0.5 : 0.18, "square", 0.16),
     win: () => arp([72, 76, 79, 84, 79, 84, 88], 0.13, 0.25, "triangle", 0.2),
     blip: () => tone(700, 0.08, "square", 0.1),
+    pop: () => { if (AC) noiseAt(AC.currentTime, 0.3, 0.16, 500); tone(1400 + Math.random() * 800, 0.08, "triangle", 0.05, 0.05); },
   };
 
   // músicas: 32 colcheias, notas MIDI (0 = pausa)
@@ -258,6 +259,10 @@
     { bpm: 144, wave: "triangle", vol: 0.09,
       lead: [69, 72, 76, 81, 79, 76, 72, 76, 74, 77, 81, 86, 84, 81, 77, 81, 72, 76, 79, 84, 83, 79, 76, 79, 81, 0, 76, 0, 81, 0, 0, 0],
       bass: [45, 0, 45, 57, 45, 0, 45, 57, 50, 0, 50, 62, 50, 0, 50, 62, 48, 0, 48, 60, 52, 0, 52, 64, 45, 0, 52, 0, 45, 0, 0, 0] },
+    // festa do pódio
+    { bpm: 140, wave: "square", vol: 0.05,
+      lead: [72, 76, 79, 84, 0, 79, 84, 0, 88, 0, 86, 84, 79, 0, 0, 0, 77, 81, 84, 89, 0, 84, 89, 0, 91, 0, 89, 88, 84, 0, 0, 0],
+      bass: [48, 0, 55, 0, 48, 0, 55, 0, 52, 0, 55, 0, 48, 0, 55, 0, 53, 0, 57, 0, 53, 0, 57, 0, 55, 0, 59, 0, 48, 0, 55, 0] },
   ];
   const music = { on: false, paused: false, song: 0, step: 0, next: 0, tempo: 1, timer: 0 };
 
@@ -779,7 +784,7 @@
 
     if (state === "finish") {
       finishT -= dt;
-      if (finishT <= 0) showResults();
+      if (finishT <= 0) afterRace();
     }
 
     hillOff -= segments[idxOf(player.z)].curve * player.speed * 0.0025 * dt;
@@ -1384,8 +1389,9 @@
 
     // fila de posições com as carinhas
     const order = racers.slice().sort((a, b) => a.rank - b.rank);
-    const sp = clamp(H * 0.058, 26, 46), rr = sp * 0.42, x0 = 12 + rr;
-    let y0 = cy + fs * 2.3 + rr;
+    const btn = clamp(u * 0.24, 84, 124), yStart = cy + fs * 2.3;
+    const sp = clamp(Math.min(H * 0.058, (H - btn - 40 - yStart) / NR), 16, 46), rr = sp * 0.42, x0 = 12 + rr;
+    let y0 = yStart + rr;
     for (const r of order) {
       const me = r === player;
       ctx.fillStyle = me ? "#ffe14d" : "rgba(255,255,255,0.85)";
@@ -1400,7 +1406,7 @@
     if (state !== "count") {
       const p = player.rank, size = u * 0.15 * (1 + Math.max(0, posPop) * 0.02);
       const col = p === 1 ? "#ffd23f" : p === 2 ? "#e4ebf2" : p === 3 ? "#f0a35e" : "#8fd3ff";
-      outlined(p + "º", 16, H - size * 0.62 - 10, size, col, "#2b1d4a", "left");
+      outlined(p + "º", W - 16, H - size * 0.62 - 10, size, col, "#2b1d4a", "right");
     }
 
     // contagem regressiva com semáforo
@@ -1440,7 +1446,7 @@
     let icon = "", cls = "empty", n = "";
     if (vis && player.roulT > 0) { icon = ROULETTE[Math.floor(nowMs / 70) % ROULETTE.length]; cls = "rolling"; }
     else if (vis && player.item) { icon = ITEM_ICON[player.item]; cls = "ready"; n = player.itemN > 1 ? "x" + player.itemN : ""; }
-    const key = vis + "|" + icon + "|" + cls + "|" + n;
+    const key = state + "|" + icon + "|" + cls + "|" + n;
     if (key === itemKey) return;
     itemKey = key;
     itemBtn.className = (vis ? "" : "hidden ") + cls;
@@ -1452,7 +1458,10 @@
   /* ---------------- Controles --------------------------------------- */
   let steerId = null;
   function steerTo(cx) { targetNX = clamp(((cx / W) * 2 - 1) * 1.7, -1.35, 1.35); }
-  function onPress() { if (state === "count" && countT <= 2.05) rocketOK = true; }
+  function onPress() {
+    if (state === "count" && countT <= 2.05) rocketOK = true;
+    if (state === "party" && party.t > 150) endParty();
+  }
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
     for (const t of e.changedTouches) if (steerId === null) { steerId = t.identifier; steerTo(t.clientX); }
@@ -1638,6 +1647,23 @@
     const prev = save.trophies[CC.id];
     if (place <= 3 && (!prev || place < prev)) save.trophies[CC.id] = place;
     persist();
+    if (place <= 3) {
+      startParty({
+        top: st.slice(0, 3).map((x) => x.r), place, big: ["🏆", "🥈", "🥉"][place - 1],
+        title: place === 1 ? (me.fem ? "CAMPEÃ DA COPA!" : "CAMPEÃO DA COPA!") : "TROFÉU DE " + place + "º!",
+        sub: "Copa " + CC.label + " · " + place + "º lugar geral",
+        say: place === 1 ? "Parabéns, " + me.name + "! Você ganhou a Copa!" : "Uau, " + me.name + "! Você ganhou um troféu!",
+        onDone: () => trophyScreen(st, place),
+      });
+      return;
+    }
+    trophyScreen(st, place);
+  }
+
+  function trophyScreen(st, place) {
+    const me = player.ch;
+    state = "results";
+    show("results");
     resMedal.textContent = place === 1 ? "🏆" : place === 2 ? "🥈" : place === 3 ? "🥉" : "🎖️";
     resTitle.textContent = place === 1 ? (me.name + (me.fem ? " campeã" : " campeão") + " da Copa!").toUpperCase()
       : place <= 3 ? "Troféu de " + place + "º lugar! 🎉" : "Que corrida, " + me.name + "! 🎉";
@@ -1649,6 +1675,238 @@
     confetti.length = 0;
     spawnConfetti(place <= 3 ? 180 : 80);
     sfx.win();
+  }
+
+  /* ---------------- Festa do pódio (1º, 2º e 3º lugar) ------------- */
+  let party = null;
+  const GLITTER = ["#ffffff", "#ffe14d", "#ff9be0", "#9be7ff", "#ffd23f", "#c8a2ff"];
+
+  function afterRace() {
+    const p = player.place, me = player.ch;
+    if (p > 3) { showResults(); return; }
+    startParty({
+      top: finalOrder().slice(0, 3), place: p, big: MEDALS[p - 1],
+      title: p === 1 ? me.name.toUpperCase() + (me.fem ? " CAMPEÃ!" : " CAMPEÃO!") : p + "º LUGAR!",
+      sub: p === 1 ? "Você ganhou a corrida! 🏁" : "Você subiu no pódio! 🎉",
+      say: p === 1 ? "Parabéns, " + me.name + "! Você " + (me.fem ? "é a campeã!" : "é o campeão!")
+        : p === 2 ? "Uau, " + me.name + "! Segundo lugar!" : "Muito bem, " + me.name + "! Terceiro lugar!",
+      onDone: showResults,
+    });
+  }
+
+  function startParty(o) {
+    party = { ...o, t: 0, fx: [], glitter: [], balloons: [], nextBoom: 5 };
+    for (let i = 0; i < 80; i++) {
+      party.glitter.push({ x: Math.random() * W, y: Math.random() * H, vy: 0.4 + Math.random() * 1.3, s: 3 + Math.random() * 7, ph: Math.random() * 9, c: GLITTER[i % GLITTER.length] });
+    }
+    for (let i = 0; i < 12; i++) {
+      party.balloons.push({ x: Math.random() * W, y: H + Math.random() * H, vy: 0.8 + Math.random() * 1.4, hue: Math.floor(Math.random() * 360), ph: Math.random() * 9, s: 0.7 + Math.random() * 0.6 });
+    }
+    for (const r of party.top) { r.spinT = 0; r.boostT = 0; r.driftT = 0; r.driftLvl = 0; r.smallT = 0; r.jumpH = 0; r.trickA = 0; }
+    player.starT = 1e9; // kart arco-íris brilhando
+    state = "party";
+    show(null);
+    engineOff();
+    musicStop();
+    sfx.win();
+    setTimeout(() => { if (state === "party") musicPlay(4, 1); }, 900);
+    confetti.length = 0;
+    spawnConfetti(160);
+    try { if (navigator.vibrate) navigator.vibrate([90, 60, 90, 60, 250]); } catch (e) { /* ok */ }
+    // voz comemorando com o nome dela
+    try {
+      if (!save.muted && window.speechSynthesis && o.say) {
+        const u = new SpeechSynthesisUtterance(o.say);
+        u.lang = "pt-BR";
+        u.pitch = 1.4;
+        u.rate = 1.0;
+        setTimeout(() => window.speechSynthesis.speak(u), 600);
+      }
+    } catch (e) { /* sem voz, tudo bem */ }
+  }
+
+  function endParty() {
+    const done = party.onDone;
+    party = null;
+    player.starT = 0;
+    musicStop();
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* ok */ }
+    done();
+  }
+
+  function boom() {
+    const u = Math.min(W, H), hue = Math.floor(Math.random() * 360);
+    const x = W * (0.1 + Math.random() * 0.8), y = H * (0.08 + Math.random() * 0.4);
+    const n = 50, k = u / 420;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.1, v = (2.2 + Math.random() * 3.6) * k;
+      party.fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 55 + Math.random() * 35, max: 90, hue: hue + Math.random() * 40, s: (1.6 + Math.random() * 2.2) * k });
+    }
+    if (party.fx.length > 700) party.fx.splice(0, party.fx.length - 700);
+    sfx.pop();
+  }
+
+  function updateParty(dt) {
+    const p = party;
+    p.t += dt;
+    p.nextBoom -= dt;
+    if (p.nextBoom <= 0) { boom(); if (Math.random() < 0.35) boom(); p.nextBoom = 16 + Math.random() * 28; }
+    for (let i = p.fx.length - 1; i >= 0; i--) {
+      const f = p.fx[i];
+      f.x += f.vx * dt; f.y += f.vy * dt;
+      f.vy += 0.045 * dt; f.vx *= 0.985; f.vy *= 0.985;
+      f.life -= dt;
+      if (f.life <= 0) p.fx.splice(i, 1);
+    }
+    for (const g of p.glitter) { g.y += g.vy * dt; g.x += Math.sin(p.t * 0.03 + g.ph) * 0.4; if (g.y > H + 10) { g.y = -10; g.x = Math.random() * W; } }
+    for (const b of p.balloons) { b.y -= b.vy * dt; if (b.y < -120) { b.y = H + 60; b.x = Math.random() * W; } }
+  }
+
+  function sparkle(x, y, s, rot) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    quad(0, -s, s * 0.28, 0, 0, s, -s * 0.28, 0);
+    quad(-s, 0, 0, -s * 0.28, s, 0, 0, s * 0.28);
+    ctx.restore();
+  }
+
+  function drawParty() {
+    const p = party, t = p.t, u = Math.min(W, H), land = W > H;
+    // fundo com raios de arco-íris girando
+    const bg = ctx.createRadialGradient(W / 2, H * 0.6, 10, W / 2, H * 0.6, Math.max(W, H) * 0.85);
+    bg.addColorStop(0, "#7a3fc4");
+    bg.addColorStop(1, "#160b38");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(W / 2, H * 0.62);
+    ctx.rotate(t * 0.004);
+    const R = Math.max(W, H) * 1.2;
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      ctx.fillStyle = "hsla(" + Math.floor((i * 20 + t * 2) % 360) + ",95%,65%,0.16)";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R);
+      ctx.lineTo(Math.cos(a + Math.PI / 18) * R, Math.sin(a + Math.PI / 18) * R);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // fogos de artifício
+    ctx.globalCompositeOperation = "lighter";
+    for (const f of p.fx) {
+      ctx.globalAlpha = clamp(f.life / 60, 0, 1) * (0.55 + Math.random() * 0.45);
+      ctx.fillStyle = "hsl(" + Math.floor(f.hue % 360) + ",100%," + (55 + Math.random() * 25) + "%)";
+      circle(f.x, f.y, f.s);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+
+    // balões subindo
+    for (const b of p.balloons) {
+      const bx = b.x + Math.sin(t * 0.02 + b.ph) * 12, r = u * 0.05 * b.s;
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, b.y + r * 1.2);
+      ctx.quadraticCurveTo(bx + 8, b.y + r * 2.2, bx, b.y + r * 3.2);
+      ctx.stroke();
+      ctx.fillStyle = "hsl(" + b.hue + ",90%,62%)";
+      ctx.beginPath();
+      ctx.ellipse(bx, b.y, r * 0.85, r * 1.1, 0, 0, 7);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.beginPath();
+      ctx.ellipse(bx - r * 0.3, b.y - r * 0.4, r * 0.18, r * 0.3, -0.4, 0, 7);
+      ctx.fill();
+    }
+
+    // pódio com os 3 primeiros
+    const bw = Math.min(W * 0.28, 170, land ? H * 0.32 : 999), baseY = H * 0.9;
+    const spots = [
+      { place: 2, x: W / 2 - bw * 1.04, h: H * 0.15, c: "#e4ebf2", d: "#9fb0c2" },
+      { place: 1, x: W / 2, h: H * 0.21, c: "#ffd23f", d: "#d9a400" },
+      { place: 3, x: W / 2 + bw * 1.04, h: H * 0.11, c: "#f0a35e", d: "#c07030" },
+    ];
+    for (const sp of spots) {
+      const top = baseY - sp.h;
+      ctx.fillStyle = sp.d;
+      ctx.fillRect(sp.x - bw / 2, top, bw, sp.h);
+      ctx.fillStyle = sp.c;
+      ctx.fillRect(sp.x - bw / 2 + 4, top + 4, bw - 8, sp.h - 4);
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.fillRect(sp.x - bw / 2 + 4, top + 4, bw - 8, Math.max(4, sp.h * 0.08));
+      outlined(String(sp.place), sp.x, top + sp.h * 0.55, Math.min(sp.h * 0.6, bw * 0.6), "#ffffff", sp.d);
+      const r = p.top[sp.place - 1];
+      if (!r) continue;
+      const kw = bw * 0.78, me = r.isPlayer;
+      const jump = me ? Math.abs(Math.sin(t * 0.09)) * u * 0.07 : Math.abs(Math.sin(t * 0.05 + sp.place)) * u * 0.012;
+      if (me) {
+        ctx.fillStyle = "rgba(255,240,150,0.25)";
+        circle(sp.x, top - kw * 0.45 - jump, kw * 0.85);
+      }
+      drawKart(sp.x, top, kw, r, jump);
+      if (sp.place === 1) drawEmo("👑", sp.x, top - jump - kw * 0.98, kw * 0.42);
+    }
+
+    // medalha / troféu girando com brilhos
+    const ms = u * (land ? 0.26 : 0.22), wob = Math.sin(t * 0.06) * 0.12;
+    const medals = land ? [[W * 0.12, H * 0.62], [W * 0.88, H * 0.62]] : [[W / 2, H * 0.37]];
+    for (const [mx, my] of medals) {
+      ctx.save();
+      ctx.translate(mx, my - ms / 2 + Math.sin(t * 0.05) * 6);
+      ctx.rotate(wob);
+      drawEmo(p.big, 0, ms / 2, ms);
+      ctx.restore();
+      ctx.fillStyle = "#fff6b0";
+      for (let i = 0; i < 8; i++) {
+        const a = t * 0.03 + (i / 8) * Math.PI * 2, rr = ms * 0.75;
+        sparkle(mx + Math.cos(a) * rr, my - ms / 2 + Math.sin(a) * rr, ms * (0.07 + 0.05 * Math.abs(Math.sin(t * 0.1 + i))), a);
+      }
+    }
+
+    // título brilhante
+    let ts = clamp(u * 0.12, 28, 76) * (1 + Math.sin(t * 0.08) * 0.05);
+    ctx.font = "900 " + Math.round(ts) + "px " + FONT;
+    const tw = ctx.measureText(p.title).width;
+    if (tw > W * 0.92) ts *= (W * 0.92) / tw;
+    ctx.font = "900 " + Math.round(ts) + "px " + FONT;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    const ty = H * (land ? 0.13 : 0.11);
+    const grad = ctx.createLinearGradient(W / 2 - W * 0.4, 0, W / 2 + W * 0.4, 0);
+    for (let i = 0; i <= 4; i++) grad.addColorStop(i / 4, "hsl(" + Math.floor((t * 3 + i * 50) % 360) + ",100%,65%)");
+    ctx.lineWidth = ts * 0.32;
+    ctx.strokeStyle = "#2b1d4a";
+    ctx.strokeText(p.title, W / 2, ty);
+    ctx.lineWidth = ts * 0.14;
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeText(p.title, W / 2, ty);
+    ctx.fillStyle = grad;
+    ctx.fillText(p.title, W / 2, ty);
+    outlined(p.sub, W / 2, ty + ts * 0.95, clamp(u * 0.05, 15, 28), "#fff6b0", "#2b1d4a");
+
+    // purpurina caindo por cima de tudo
+    for (const g of p.glitter) {
+      ctx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 0.12 + g.ph));
+      ctx.fillStyle = g.c;
+      sparkle(g.x, g.y, g.s, t * 0.05 + g.ph);
+    }
+    ctx.globalAlpha = 1;
+    for (const f of confetti) {
+      ctx.fillStyle = f.c;
+      ctx.fillRect(f.x, f.y, f.s, f.s * 0.6);
+    }
+
+    if (t > 150) {
+      ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.1);
+      outlined("Toque para continuar ▶", W / 2, H * 0.955, clamp(u * 0.045, 14, 24), "#ffffff", "#2b1d4a");
+      ctx.globalAlpha = 1;
+    }
   }
 
   function pause() {
@@ -1699,6 +1957,7 @@
     lastT = t;
     nowMs = t;
     try {
+      if (state === "party") { updateParty(dt); updateFx(dt); drawParty(); syncButtons(); requestAnimationFrame(loop); return; }
       if (state === "count") updateCount(dt);
       else if (state !== "pause") update(dt);
       updateFx(dt);
