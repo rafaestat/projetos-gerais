@@ -1,12 +1,12 @@
 {
   "name": "Corrida da Lara",
   "short_name": "Lara",
-  "description": "Jogo de carrinho da Lara! Pegue as estrelinhas e desvie dos carros!",
+  "description": "Corrida de kart da Lara! Caixas de item, turbos, 4 pistas e a Copa Arco-Íris!",
   "lang": "pt-BR",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#5ec8f2",
   "theme_color": "#5ec8f2",
   "icons": [

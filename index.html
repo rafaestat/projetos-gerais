@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Carrinho da Lara 🚗</title>
+  <title>Corrida da Lara 🏎️</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
@@ -17,28 +17,58 @@
   <div id="game-wrap">
     <canvas id="game"></canvas>
 
+    <!-- Botões durante a corrida -->
+    <button id="pause-btn" class="round-btn hidden" aria-label="Pausar">❚❚</button>
+    <button id="item-btn" class="hidden" aria-label="Usar item"><span id="item-icon"></span><span id="item-count"></span></button>
+
     <!-- Tela inicial -->
-    <div id="start-screen" class="screen">
-      <h1>🏁 Corrida da Lara</h1>
-      <p class="sub">Uma corrida de kart! Escolha sua cor, Lara! 💖</p>
-      <div id="car-picker"></div>
-      <button id="play-btn" class="big-btn">CORRER ▶</button>
-      <p class="hint">Arraste o dedo para dirigir 👆<br>Pegue ⭐, passe no turbo 🔥 e ultrapasse todo mundo!</p>
+    <div id="title-screen" class="screen">
+      <div class="logo">
+        <div class="logo-top">🏁 Corrida da</div>
+        <div class="logo-name">LARA</div>
+        <div class="logo-sub">Kart Arco-Íris 🌈</div>
+      </div>
+      <button id="cup-btn" class="big-btn">🏆 COPA</button>
+      <button id="free-btn" class="big-btn blue">🏁 CORRIDA LIVRE</button>
+      <div id="trophy-shelf"></div>
+      <button id="mute-btn" class="round-btn corner" aria-label="Som">🔊</button>
     </div>
 
-    <!-- HUD durante o jogo -->
-    <div id="hud" class="hidden">
-      <div id="pos">🏅 4º</div>
-      <div id="lap">🏁 1/3</div>
-      <div id="score">⭐ 0</div>
+    <!-- Monte seu kart -->
+    <div id="setup-screen" class="screen hidden">
+      <h2>Quem vai correr?</h2>
+      <div id="char-picker" class="picker"></div>
+      <h2>Cor do kart</h2>
+      <div id="car-picker" class="picker"></div>
+      <h2>Velocidade</h2>
+      <div id="cc-picker" class="picker"></div>
+      <button id="setup-go" class="big-btn">PRÓXIMO ▶</button>
+      <button class="link-btn" data-go="title">◀ Voltar</button>
     </div>
 
-    <!-- Tela de fim de corrida -->
-    <div id="over-screen" class="screen hidden">
-      <div id="over-medal">🥇</div>
-      <h1 id="over-title">LARA CAMPEÃ! 🏆</h1>
-      <p class="sub" id="over-score">Você chegou em 1º lugar!</p>
-      <button id="again-btn" class="big-btn">CORRER DE NOVO 🔄</button>
+    <!-- Escolha de pista -->
+    <div id="track-screen" class="screen hidden">
+      <h2>Escolha a pista</h2>
+      <div id="track-picker" class="cards"></div>
+      <button class="link-btn" data-go="setup">◀ Voltar</button>
+    </div>
+
+    <!-- Resultado / troféu -->
+    <div id="results-screen" class="screen hidden">
+      <div id="res-medal">🥇</div>
+      <h1 id="res-title"></h1>
+      <p id="res-sub" class="sub"></p>
+      <div id="res-table"></div>
+      <button id="res-next" class="big-btn"></button>
+      <button id="res-alt" class="link-btn hidden"></button>
+      <button id="res-menu" class="link-btn">🏠 Menu</button>
+    </div>
+
+    <!-- Pausa -->
+    <div id="pause-screen" class="screen hidden">
+      <h1>⏸ Pausa</h1>
+      <button id="resume-btn" class="big-btn">CONTINUAR ▶</button>
+      <button id="quit-btn" class="link-btn">🏠 Sair da corrida</button>
     </div>
   </div>
 
