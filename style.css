@@ -253,7 +253,8 @@ canvas {
 /* ---------- Botão de item ---------- */
 #item-btn {
   position: absolute;
-  right: max(16px, env(safe-area-inset-right));
+  /* do lado esquerdo: a Lara solta os itens com a mão esquerda */
+  left: max(16px, env(safe-area-inset-left));
   bottom: max(18px, env(safe-area-inset-bottom));
   width: clamp(84px, 24vmin, 124px);
   height: clamp(84px, 24vmin, 124px);

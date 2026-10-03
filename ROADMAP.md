@@ -37,6 +37,14 @@ mais 60 s de corrida "de verdade" com um jogador-robô: sem erros, ~60 FPS.
 
 ---
 
+## ✅ Sprint 1.1 — Pedidos do 1º teste com a Lara (entregue)
+
+| Pedido | Status |
+|---|---|
+| Botão de item do lado **esquerdo** (ela solta os itens com a mão esquerda, celular apoiado na barriga) | ✅ |
+| Festa especial no **1º, 2º e 3º lugar**: pódio com os karts, coroa 👑, fogos de artifício, purpurina, balões, título arco-íris, música de festa, vibração e uma voz dizendo "Parabéns, Lara!" | ✅ |
+| A mesma festa ao ganhar troféu na Copa | ✅ |
+
 ## 🔜 Sprint 2 — "Teste com a Lara" (próxima)
 
 A Sprint 2 depende do **teste com a Lara**. Antes de programar mais, o ideal é ela
