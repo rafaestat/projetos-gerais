@@ -1,379 +1,389 @@
 <title>Alerta de Golpe Pix</title>
 <style>
-/* Layout: app de carteira digital, uma coluna; alerta leve = BottomSheet, alerta forte = tela cheia.
-   Tokens em 3 camadas: base (paleta crua) → semânticos (papel na interface) → componentes. */
+/* Layout: celular centralizado + painel "Por que essa tela" logo abaixo, com a evidência de cada etapa.
+   Telas normais seguem tokens públicos do DS PicPay; a Camada 2 rompe a marca de propósito (polimórfica). */
 :root{
-  /* 1. BASE — valores do DS PicPay (fonte pública: designmd.app/brands/picpay) */
-  --green-50:#E6F9ED; --green-500:#21C25E; --green-600:#1AA34E; --green-700:#15803D;
-  --red-50:#FEE2E2; --red-500:#EF4444; --red-600:#DC2626; --red-700:#B91C1C;
-  --amber-50:#FEF3C7; --amber-500:#F59E0B; --amber-700:#B45309;
-  --white:#FFFFFF; --gray-50:#F5F7FA; --gray-200:#E5E7EB; --gray-400:#9CA3AF; --gray-500:#6B7280; --gray-900:#1A1A1A;
-  --space-xxs:4px; --space-xs:8px; --space-sm:12px; --space-md:16px; --space-lg:24px; --space-xl:32px; --margin:20px;
-  --radius-medium:8px; --radius-large:12px; --radius-xlarge:16px; --radius-xxlarge:24px; --radius-pill:999px;
+  --green:#21C25E; --green-press:#1AA34E; --green-text:#15803D; --green-soft:#E6F9ED;
+  --bg:#F5F7FA; --surface:#FFFFFF; --text:#1A1A1A; --muted:#6B7280; --line:#E5E7EB;
+  --amber-text:#B45309; --amber-soft:#FEF3C7;
+  --scrim:rgba(0,0,0,.56); --shadow:0 8px 24px rgba(0,0,0,.12);
   --font:"PicPay Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --fs-caption:12px; --fs-body2:14px; --fs-body1:16px; --fs-subtitle:18px; --fs-h6:20px; --fs-h4:24px; --fs-h3:28px; --fs-h1:40px;
-  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
-  --lh-tight:1.2; --lh-normal:1.4;
-  --shadow-low:0 1px 3px 0 rgba(0,0,0,.06); --shadow-high:0 8px 24px 0 rgba(0,0,0,.12);
-  --touch:48px; --dur:200ms;
-
-  /* 2. SEMÂNTICOS --------------------------------------------------- */
-  --color-bg:var(--gray-50); --color-surface:var(--white); --color-text:var(--gray-900); --color-text-muted:var(--gray-500); --color-border:var(--gray-200);
-  --color-brand:var(--green-500); --color-on-brand:var(--gray-900); --color-brand-soft:var(--green-50); --color-brand-strong:var(--green-700); --color-brand-pressed:var(--green-600);
-  --color-danger:var(--red-600); --color-danger-text:var(--red-700); --color-danger-soft:var(--red-50); --color-on-danger:var(--white);
-  --color-warning:var(--amber-500); --color-warning-text:var(--amber-700); --color-warning-soft:var(--amber-50);
-  --color-scrim:rgba(0,0,0,.56);
+  --r-l:16px; --r-xl:24px; --pill:999px; --touch:48px; --m:20px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --color-bg:#1A1A2E; --color-surface:#2D2D3A; --color-text:#FFFFFF; --color-text-muted:#C4C8D0; --color-border:#3E3E4E;
-  --color-brand:#21C25E; --color-on-brand:#1A1A1A; --color-brand-soft:#173A2A; --color-brand-strong:#4CD97F; --color-brand-pressed:#1AA34E;
-  --color-danger:#DC2626; --color-danger-text:#FCA5A5; --color-danger-soft:#3B1A1F; --color-on-danger:#FFFFFF;
-  --color-warning:#F59E0B; --color-warning-text:#FCD34D; --color-warning-soft:#3A2E12;
-  --color-scrim:rgba(0,0,0,.72); color-scheme:dark}}
+  --green:#21C25E; --green-press:#1AA34E; --green-text:#4CD97F; --green-soft:#173A2A;
+  --bg:#12121C; --surface:#22222E; --text:#FFFFFF; --muted:#C4C8D0; --line:#3A3A48;
+  --amber-text:#FCD34D; --amber-soft:#3A2E12; --scrim:rgba(0,0,0,.72); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --color-bg:#1A1A2E; --color-surface:#2D2D3A; --color-text:#FFFFFF; --color-text-muted:#C4C8D0; --color-border:#3E3E4E;
-  --color-brand:#21C25E; --color-on-brand:#1A1A1A; --color-brand-soft:#173A2A; --color-brand-strong:#4CD97F; --color-brand-pressed:#1AA34E;
-  --color-danger:#DC2626; --color-danger-text:#FCA5A5; --color-danger-soft:#3B1A1F; --color-on-danger:#FFFFFF;
-  --color-warning:#F59E0B; --color-warning-text:#FCD34D; --color-warning-soft:#3A2E12;
-  --color-scrim:rgba(0,0,0,.72); color-scheme:dark}
+  --green:#21C25E; --green-press:#1AA34E; --green-text:#4CD97F; --green-soft:#173A2A;
+  --bg:#12121C; --surface:#22222E; --text:#FFFFFF; --muted:#C4C8D0; --line:#3A3A48;
+  --amber-text:#FCD34D; --amber-soft:#3A2E12; --scrim:rgba(0,0,0,.72); color-scheme:dark}
 
 *{box-sizing:border-box}
-body{background:var(--color-bg);color:var(--color-text);font:var(--fw-regular) var(--fs-body1)/var(--lh-normal) var(--font);padding:var(--space-md);padding-block:var(--space-sm) var(--space-xl)}
-.phone{position:relative;max-width:400px;margin:0 auto;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xxlarge);min-height:min(760px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden}
-.screen{flex:1;display:flex;flex-direction:column;gap:var(--space-md);padding:var(--space-sm) var(--margin) var(--space-lg)}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.4 var(--font);padding:16px;padding-block:12px 40px}
+.wrap{max-width:400px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+p{margin:0} h1,h2{margin:0;font-weight:700;line-height:1.2;text-wrap:balance}
+h1{font-size:28px} h2{font-size:22px}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--green-text);outline-offset:2px}
+
+/* Celular */
+.phone{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:28px;min-height:min(720px,calc(100vh - 120px));display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;align-items:center;gap:8px;min-height:56px;padding:8px 8px 0}
+.top button{background:none;border:0;min-width:var(--touch);min-height:var(--touch);border-radius:var(--pill);font-size:22px}
+.top span{font-weight:700}
+.screen{flex:1;display:flex;flex-direction:column;gap:16px;padding:8px var(--m) 20px}
 .grow{flex:1}
-p{margin:0}
-.muted{color:var(--color-text-muted)}
-button{font:inherit;cursor:pointer}
+.muted{color:var(--muted)}
 
-/* Tipografia: escala fixa, títulos em frase (sem caixa alta) */
-h1,h2{font-weight:var(--fw-bold);line-height:var(--lh-tight);margin:0;text-wrap:balance;letter-spacing:-.01em}
-h1{font-size:var(--fs-h3)} h2{font-size:var(--fs-h6)}
+/* Botões */
+.btn{width:100%;min-height:var(--touch);border-radius:var(--pill);padding:12px 20px;font-weight:700;border:2px solid transparent}
+.b-primary{background:var(--green);color:#1A1A1A}
+.b-primary:active{background:var(--green-press)}
+.b-secondary{background:transparent;border-color:var(--green);color:var(--green-text)}
+.b-text{background:none;color:var(--green-text);min-height:40px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.stack{display:flex;flex-direction:column;gap:8px}
 
-/* Componente: TopBar */
-.bar{display:flex;align-items:center;gap:var(--space-xs);padding:var(--space-sm) var(--space-sm) 0;font-weight:700;min-height:56px}
-.bar button{background:none;border:0;color:inherit;font-size:1.5rem;line-height:1;min-width:var(--touch);min-height:var(--touch);border-radius:var(--radius-pill)}
+/* Pagamento */
+.who{display:flex;gap:12px;align-items:center}
+.av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:var(--green-text);font-weight:700;flex:none}
+.amount{font-size:40px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.payee{border:1px solid var(--line);border-radius:var(--r-l);padding:16px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;gap:12px}
+.flag{display:inline-flex;gap:6px;align-items:center;align-self:flex-start;padding:4px 10px;border-radius:var(--pill);background:var(--amber-soft);color:var(--amber-text);font-size:13px;font-weight:700}
 
-/* Componente: Tag */
-.tag{align-self:flex-start;padding:var(--space-xxs) var(--space-sm);border-radius:var(--radius-pill);font-weight:700;font-size:var(--fs-caption)}
-.tag.red{background:var(--color-danger-soft);color:var(--color-danger-text)}
-.tag.amber{background:var(--color-warning-soft);color:var(--color-warning-text)}
+/* Chips */
+.q{display:flex;flex-direction:column;gap:8px}
+.q b{font-size:17px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:var(--touch);padding:0 16px;border-radius:var(--pill);border:2px solid var(--line);background:transparent;font-weight:700}
+.chip[aria-pressed="true"]{border-color:currentColor;background:rgba(127,127,127,.15)}
+.chip[aria-pressed="true"]::before{content:"✓ "}
 
-/* Componente: Button (primary / secondary / tertiary) — alvo de toque mínimo 48px */
-.btn{border:0;border-radius:var(--radius-pill);min-height:var(--touch);padding:var(--space-sm) var(--space-lg);font-weight:var(--fw-bold);font-size:var(--fs-body1);width:100%;transition:transform var(--dur),opacity var(--dur)}
-.btn:active{transform:scale(.98)}
-.btn.green{background:var(--color-brand);color:var(--color-on-brand)}
-.btn.green:active{background:var(--color-brand-pressed)}                         /* primary */
-.btn.outline{background:transparent;color:var(--color-brand-strong);border:2px solid var(--color-brand)} /* secondary */
-.btn.text{background:none;color:var(--color-brand-strong);font-weight:700}                       /* tertiary */
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-:focus-visible{outline:3px solid var(--color-brand-strong);outline-offset:2px}
-
-/* Componente: Avatar + ListItem */
-.avatar{width:var(--touch);height:var(--touch);border-radius:50%;background:var(--color-brand-soft);color:var(--color-brand-strong);display:grid;place-items:center;font-weight:var(--fw-bold)}
-.who{display:flex;align-items:center;gap:var(--space-sm)}
-.amount{font-weight:var(--fw-bold);font-size:var(--fs-h1);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.list{border-top:1px solid var(--color-border)}
-.list div{display:flex;justify-content:space-between;gap:var(--space-sm);min-height:var(--touch);align-items:center;border-bottom:1px solid var(--color-border)}
-
-/* Componente: ChoiceChip (seleção única) */
-.q{display:flex;flex-direction:column;gap:var(--space-xs)}
-.q-title{font-weight:700}
-.opts{display:flex;flex-wrap:wrap;gap:var(--space-xs)}
-.opt{min-height:var(--touch);border:2px solid var(--color-border);background:var(--color-surface);color:var(--color-text);border-radius:var(--radius-pill);padding:0 var(--space-md);font-weight:700}
-.opt[aria-pressed="true"]{border-color:var(--color-brand);background:var(--color-brand-soft)}
-.opt[aria-pressed="true"]::before{content:"✓ "}
-
-/* Componente: TextField */
-input[type=text]{width:100%;min-height:var(--touch);font:inherit;color:var(--color-text);background:var(--color-bg);border:0;border-bottom:2px solid var(--color-border);border-radius:var(--radius-large) var(--radius-large) 0 0;padding:var(--space-sm)}
-input[type=text]:focus{border-bottom-color:var(--color-brand-strong);outline:none}
-.hint{font-size:var(--fs-caption);color:var(--color-text-muted)} .hint.bad{color:var(--color-danger-text);font-weight:700}
-
-/* Variação: Button de segurar (progresso visível) */
+/* Segurar */
 .hold{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-.hold .fill{position:absolute;inset:0;width:0;background:var(--color-border)}
+.hold i{position:absolute;inset:0;width:0;background:currentColor;opacity:.18}
 .hold span{position:relative}
 
-/* Protótipo: seletor de cenário */
-.tier{box-shadow:var(--shadow-low);display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-xxs);text-align:left;border:2px solid var(--color-border);border-radius:var(--radius-xlarge);padding:var(--space-md);background:var(--color-surface);color:var(--color-text)}
-.tier small{color:var(--color-text-muted);font-size:var(--fs-caption)}
-.toggle{display:flex;align-items:center;justify-content:space-between;gap:var(--space-sm);min-height:var(--touch);font-weight:700}
-.toggle input{width:24px;height:24px;accent-color:var(--color-brand-strong)}
-.note{font-size:var(--fs-caption);color:var(--color-text-muted);background:var(--color-bg);border-radius:var(--radius-large);padding:var(--space-xs) var(--space-sm)}
+/* ---- Camada 2: três visuais que se alternam (alerta polimórfico) ---- */
+.v-hazard{--alert-bg:#111111;--alert-fg:#FFFFFF;--alert-accent:#FFD60A;--alert-on-accent:#111111}
+.v-red{--alert-bg:#B91C1C;--alert-fg:#FFFFFF;--alert-accent:#FFFFFF;--alert-on-accent:#B91C1C}
+.v-paper{--alert-bg:#FFF7D6;--alert-fg:#1A1A1A;--alert-accent:#1A1A1A;--alert-on-accent:#FFD60A}
+.alert{background:var(--alert-bg);color:var(--alert-fg)}
+.alert .muted{color:inherit;opacity:.85}
+.alert .b-primary{background:var(--alert-accent);color:var(--alert-on-accent)}
+.alert .b-secondary{border-color:var(--alert-fg);color:var(--alert-fg)}
+.alert .b-text{color:var(--alert-fg);text-decoration:underline}
+.alert .chip{border-color:color-mix(in srgb,var(--alert-fg) 35%,transparent)}
+.stripes{height:14px;flex:none;background:repeating-linear-gradient(-45deg,var(--alert-accent) 0 14px,transparent 14px 28px)}
+.v-red .stripes,.v-paper .stripes{display:none}
+.mark{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--alert-accent);color:var(--alert-on-accent)}
+.v-paper .mark{border-radius:12px;transform:rotate(45deg)} .v-paper .mark svg{transform:rotate(-45deg)}
+.big{font-size:34px;line-height:1.05;letter-spacing:-.02em}
+.say{font-size:19px;font-weight:700}
+.timer{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.tip{border-radius:var(--r-l);padding:14px 16px;background:color-mix(in srgb,var(--alert-fg) 10%,transparent);font-weight:700}
 
-/* Componente: BottomSheet */
-.scrim{position:absolute;inset:0;background:var(--color-scrim);display:flex;align-items:flex-end;animation:fade var(--dur)}
-.sheet{width:100%;background:var(--color-surface);border-radius:var(--radius-xxlarge) var(--radius-xxlarge) 0 0;padding:var(--space-xs) var(--margin) var(--space-lg);box-shadow:var(--shadow-high);display:flex;flex-direction:column;gap:var(--space-md);animation:up 250ms ease-out}
-.grip{width:40px;height:4px;border-radius:2px;background:var(--color-border);align-self:center}
+/* Sheet de análise de print */
+.scrim{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:flex-end}
+.sheet{width:100%;background:var(--surface);color:var(--text);border-radius:var(--r-xl) var(--r-xl) 0 0;box-shadow:var(--shadow);padding:12px var(--m) 20px;display:flex;flex-direction:column;gap:14px;animation:up .25s ease-out}
+.sheet .b-primary{background:var(--green);color:#1A1A1A}
+.sheet .b-text{color:var(--green-text);text-decoration:none}
+.grip{width:40px;height:4px;border-radius:2px;background:var(--line);align-self:center}
+.sig{display:flex;gap:8px;align-items:flex-start}
+.sig::before{content:"!";flex:none;width:22px;height:22px;border-radius:50%;background:#B91C1C;color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
 
-/* Componente: FullScreenAlert (crítico) — sempre vermelho escuro com texto branco (contraste ≥ 5:1) */
-.stop{background:var(--color-danger);color:var(--color-on-danger)}
-.stop .muted{color:var(--color-on-danger);opacity:.9}
-.stop .btn.green{background:var(--color-on-danger);color:var(--color-danger-text)}
-.stop .btn.outline{color:var(--color-on-danger);border-color:var(--color-on-danger)}
-.bigicon{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-weight:var(--fw-bold);font-size:2rem}
-.stop .bigicon{background:var(--color-on-danger);color:var(--color-danger)}
-.bigicon.ok{background:var(--color-brand-soft);color:var(--color-brand-strong)}
-.bigicon.amber{background:var(--color-warning-soft);color:var(--color-warning-text)}
-.quote{background:rgba(0,0,0,.2);border-radius:var(--radius-xlarge);padding:var(--space-sm) var(--space-md);font-weight:700}
-.timer{font-weight:var(--fw-bold);font-size:var(--fs-h1);font-variant-numeric:tabular-nums}
+/* Painel de evidência */
+.why{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:16px;display:flex;flex-direction:column;gap:8px}
+.why h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.why p{font-size:15px}
+.why a{color:var(--green-text);font-size:14px;font-weight:700}
 
-/* Componente: Stepper */
-.dots{display:flex;gap:var(--space-xxs)} .dots i{flex:1;height:4px;border-radius:2px;background:var(--color-border)} .dots i.on{background:var(--color-danger)}
-.stop .dots i{background:rgba(255,255,255,.35)} .stop .dots i.on{background:var(--color-on-danger)}
+/* Início */
+.tier{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;width:100%;padding:16px;border:2px solid var(--line);border-radius:var(--r-l);background:transparent}
+.tier small{color:var(--muted);font-size:14px}
+.toggle{display:flex;justify-content:space-between;align-items:center;min-height:var(--touch);font-weight:700}
+.toggle input{width:24px;height:24px;accent-color:var(--green-press)}
 
-/* Movimento */
 .shake{animation:shake .45s}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-.flash{animation:flash .9s ease-out}
-@keyframes flash{0%{box-shadow:0 0 0 0 rgba(220,38,38,.9)}100%{box-shadow:0 0 0 24px rgba(220,38,38,0)}}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.flash,.shake,.sheet,.scrim,.btn{animation:none;transition:none}}
-#hap-wrap{position:absolute;left:-9999px;opacity:0}
+@media (prefers-reduced-motion:reduce){.shake,.sheet{animation:none}}
+#hap{position:absolute;left:-9999px;opacity:0}
 </style>
 
-<!-- iPhone (iOS 18+): tocar no rótulo de um "switch" dispara o háptico do sistema -->
-<div id="hap-wrap"><input type="checkbox" switch id="hap"><label for="hap" id="hap-label">h</label></div>
+<div id="hap"><input type="checkbox" switch id="hapi"><label for="hapi" id="hapl">h</label></div>
 
-<main class="phone" id="phone"></main>
+<div class="wrap">
+  <main class="phone" id="phone"></main>
+  <aside class="why" id="why" aria-label="Por que essa tela"></aside>
+</div>
 
 <script>
-const $phone=document.getElementById('phone'), hapLabel=document.getElementById('hap-label');
-const hasVibrate=typeof navigator.vibrate==='function';
-const S={tier:1,onCall:true,answers:{},hadCall:false};
-const PIX={valor:'R$ 1.500,00',valorNum:'1500',nome:'Gabriel Costa Souza',primeiro:'Gabriel',ini:'GS',chave:'Celular •••• 4471'};
+const $ = id => document.getElementById(id);
+const phone = $('phone'), why = $('why'), hapl = $('hapl');
+const PIX = { nome:'Gabriel Costa Souza', primeiro:'Gabriel', ini:'GS', valor:'R$ 1.500,00', banco:'Banco Exemplo', chave:'Celular •••• 4471' };
+const S = { tier:1, onCall:true, variant:0, a:{} };
 
-// ---- Háptica: Android usa navigator.vibrate; iPhone usa o truque do switch ----
-// A web não controla a intensidade do motor, só a duração. "Forte" = pulsos longos, quase sem pausa, repetidos.
-function iosBurst(p){
-  // iPhone só dá toques curtos: transforma cada trecho "ligado" do padrão em uma rajada de toques a cada 50ms
-  const seq=Array.isArray(p)?p:[p]; let t=0;
-  seq.forEach((d,i)=>{ if(i%2===0){ for(let k=0;k<Math.max(1,Math.round(d/50));k++) setTimeout(()=>{try{hapLabel.click()}catch(e){}},t+k*50); } t+=d; });
+/* ---------- Vibração ---------- */
+// A web só controla a duração. "Forte" = pulsos longos e repetidos. iPhone: rajada de toques curtos (iOS 18+).
+const canVibrate = typeof navigator.vibrate === 'function';
+const V = { tap:20, check:[200,100,200], stop:[1000,100,1000,100,1000,100,1500], call:[1200,200,1200,200,1200], ok:[60,60,60] };
+function vibrate(p){
+  let ok=false; try{ if(canVibrate) ok=navigator.vibrate(p); }catch(e){}
+  if(!ok){ const seq=[].concat(p); let t=0; seq.forEach((d,i)=>{ if(i%2===0) for(let k=0;k<Math.max(1,Math.round(d/50));k++) setTimeout(()=>{try{hapl.click()}catch(e){}},t+k*50); t+=d; }); }
+  phone.classList.remove('shake'); void phone.offsetWidth; phone.classList.add('shake');
 }
-function buzz(p){
-  let ok=false; try{ if(hasVibrate) ok=navigator.vibrate(p); }catch(e){}
-  if(!ok) iosBurst(p);
-  $phone.classList.remove('shake'); void $phone.offsetWidth; $phone.classList.add('shake');
-}
-const H={
-  tap:20, tick:25, ok:[60,60,60],
-  aviso:[300,80,300,80,300],                          // camada 1: três pulsos firmes
-  pare:[1000,100,1000,100,1000,100,1500],             // camada 2: ~4,8s quase contínuos
-  ligacao:[1200,200,1200,200,1200],                   // desliga a ligação: parece um telefone tocando
+let alarmT=0;
+function alarm(p){ stopAlarm(); let n=0; const go=()=>{ vibrate(p); if(++n<3) alarmT=setTimeout(go,7000); }; go(); phone.addEventListener('pointerdown',stopAlarm,{once:true}); }
+function stopAlarm(){ clearTimeout(alarmT); try{ canVibrate&&navigator.vibrate(0); }catch(e){} }
+
+/* ---------- Utilidades ---------- */
+const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+const svg = d => `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  alert: svg('<path d="M12 4l9 16H3z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/>'),
+  phone: svg('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/><path d="M3 3l18 18"/>'),
+  check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')
 };
-// Alarme: repete o padrão forte até a pessoa tocar na tela (máx. 3 vezes)
-let alarmTimer=0;
-function alarm(p,{vezes=3,intervalo=7000}={}){
-  stopAlarm(); let n=0;
-  const tocar=()=>{ buzz(p); $phone.classList.remove('flash'); void $phone.offsetWidth; $phone.classList.add('flash'); if(++n<vezes) alarmTimer=setTimeout(tocar,intervalo); };
-  tocar();
-  $phone.addEventListener('pointerdown',stopAlarm,{once:true});
+function show(html, cls, evidence){
+  stopAlarm();
+  phone.className = 'phone ' + (cls||'');
+  phone.innerHTML = html;
+  phone.querySelectorAll('[data-back]').forEach(b=>b.onclick=home);
+  why.innerHTML = `<h3>Por que essa tela</h3>${evidence}`;
+  window.scrollTo(0,0);
 }
-function stopAlarm(){ clearTimeout(alarmTimer); alarmTimer=0; try{ hasVibrate&&navigator.vibrate(0); }catch(e){} }
-
-// ---- Utilidades ----
-const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
-const bar=(title='',back=true)=>`<div class="bar">${back?'<button aria-label="Voltar" data-back>‹</button>':''}<span>${title}</span></div>`;
-function render(html,cls=''){ stopAlarm(); $phone.className='phone '+cls; $phone.innerHTML=html; window.scrollTo(0,0);
-  $phone.querySelectorAll('[data-back]').forEach(b=>b.onclick=inicio); }
-const dots=(n,t)=>`<div class="dots" role="img" aria-label="Passo ${n} de ${t}">${Array.from({length:t},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`;
-const opts=(id,list)=>`<div class="opts" data-q="${id}">${shuffle(list).map(([v,l])=>`<button class="opt" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div>`;
-function bindOpts(onChange){
-  $phone.querySelectorAll('.opts').forEach(g=>g.addEventListener('click',e=>{
-    const b=e.target.closest('.opt'); if(!b) return;
-    g.querySelectorAll('.opt').forEach(o=>o.setAttribute('aria-pressed','false'));
-    b.setAttribute('aria-pressed','true'); S.answers[g.dataset.q]=b.dataset.v; buzz(H.tap); onChange&&onChange();
+const topBar = (t='') => `<div class="top"><button data-back aria-label="Voltar ao início">‹</button><span>${t}</span></div>`;
+const chips = (id, list) => `<div class="chips" data-q="${id}">${shuffle(list).map(([v,l])=>`<button class="chip" aria-pressed="false" data-v="${v}">${l}</button>`).join('')}</div>`;
+function onChips(cb){
+  phone.querySelectorAll('.chips').forEach(g=>g.addEventListener('click',e=>{
+    const b=e.target.closest('.chip'); if(!b) return;
+    g.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true'); S.a[g.dataset.q]=b.dataset.v; vibrate(V.tap); cb&&cb();
   }));
 }
-function holdButton(el,ms,done){
-  const fill=el.querySelector('.fill'); let t0=0,raf=0,last=0;
-  const step=ts=>{const p=Math.min(1,(ts-t0)/ms); fill.style.width=(p*100)+'%'; const q=Math.floor(p*4); if(q>last){last=q;buzz(H.tick);} if(p>=1){stop();done();} else raf=requestAnimationFrame(step);};
-  const start=e=>{ if(el.disabled) return; e.preventDefault(); t0=performance.now(); last=0; raf=requestAnimationFrame(step); };
-  const stop=()=>{cancelAnimationFrame(raf); fill.style.width='0';};
-  el.addEventListener('pointerdown',start); ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,stop));
-  el.addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&!el.disabled) done(); });
+function hold(el, ms, done){
+  const fill=el.querySelector('i'); let t0=0, raf=0;
+  const step=ts=>{ const p=Math.min(1,(ts-t0)/ms); fill.style.width=p*100+'%'; if(p>=1){ end(); done(); } else raf=requestAnimationFrame(step); };
+  const start=e=>{ e.preventDefault(); t0=performance.now(); raf=requestAnimationFrame(step); };
+  const end=()=>{ cancelAnimationFrame(raf); fill.style.width='0'; };
+  el.addEventListener('pointerdown',start); ['pointerup','pointerleave','pointercancel'].forEach(x=>el.addEventListener(x,end));
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); done(); } });
 }
-const $=id=>document.getElementById(id);
+const src = (txt, href) => `<a href="${href}" target="_blank" rel="noopener">${txt} ↗</a>`;
+const L = {
+  notts: ['Nottingham / Open Banking UK, 2023','https://www.nottingham.ac.uk/cedex/documents/papers/cedex-discussion-paper-2023-08.pdf'],
+  cba:   ['CommBank NameCheck','https://commbank.com.au/articles/newsroom/2024/08/cba-cuts-scam-losses-for-customers.html'],
+  andr:  ['Android: proteção em ligação','https://www.androidauthority.com/android-in-call-scam-protection-us-expansion-3621618'],
+  monzo: ['Monzo Call Status','https://android-developers.googleblog.com/2024/03/battling-impersonation-scams-monzo-innovative-approach.html?hl=id'],
+  fos:   ['Ombudsman UK: respostas ditadas','https://www.financial-ombudsman.org.uk/decision/DRN-5949234.pdf'],
+  byu:   ['BYU: alertas polimórficos','https://misq.umn.edu/pub/skin/frontend/default/misq/pdf/V42I2/14124_RA_VanceJenkins.pdf'],
+  ukf:   ['UK Finance: Effective Warnings','https://www.thinksinsight.com/blog/uk-finance-effective-warnings-research'],
+  feb:   ['Febraban 2025','https://seucreditodigital.com.br/golpes-em-contas-39-brasileiros-vitimas/'],
+  star:  ['Starling Scam Intelligence','https://www.uktech.news/ai/starling-bank-launches-ai-tool-to-combat-scams-20251028'],
+  med:   ['MED 2.0','https://dock.tech/fluid/blog/banking/med-2-0/']
+};
+const cite = (...keys) => keys.map(k=>src(...L[k])).join('');
 
-// ---- Início ----
-function inicio(){
-  S.answers={}; S.hadCall=false;
-  render(`${bar('Protótipo',false)}<section class="screen">
+/* ---------- Início ---------- */
+function home(){
+  S.a={};
+  show(`<div class="top"><span style="padding-left:12px">Protótipo</span></div>
+  <section class="screen">
     <h1>Simular alerta de golpe</h1>
-    <button class="tier" id="t1"><b>Risco baixo · 1%</b><small>Pausa rápida</small></button>
-    <button class="tier" id="t2"><b>Risco alto · 10%</b><small>Pare e confirme</small></button>
-    <label class="toggle" for="call">Simular ligação ativa<input type="checkbox" id="call" ${S.onCall?'checked':''}></label>
+    <div class="stack">
+      <button class="tier" id="t1"><b>Risco ~1%</b><small>Confere rapidinho</small></button>
+      <button class="tier" id="t2"><b>Risco ~10%</b><small>Pare</small></button>
+    </div>
+    <label class="toggle" for="call">Pessoa está numa ligação<input type="checkbox" id="call" ${S.onCall?'checked':''}></label>
     <div class="grow"></div>
-    <button class="btn text" id="test">Testar vibração forte</button>
-    <p class="note">${hasVibrate?'Vibração ativa. Tire do silencioso.':'iPhone: só vibra no iOS 18+.'}</p>
-  </section>`);
+    <button class="btn b-text" id="test">Testar vibração forte</button>
+    <p class="muted" style="font-size:14px;text-align:center">${canVibrate?'Tire o celular do silencioso.':'No iPhone a vibração é fraca (iOS 18+).'}</p>
+  </section>`, '',
+  `<p>Mesmo Pix, dois níveis de risco. O atrito pesado fica só no risco alto: aplicado a todo pagamento, ele derrubou 14 p.p. dos pagamentos legítimos.</p>${cite('notts')}`);
   $('call').onchange=e=>S.onCall=e.target.checked;
-  $('t1').onclick=()=>{S.tier=1;revisao();};
-  $('t2').onclick=()=>{S.tier=2;revisao();};
-  $('test').onclick=()=>alarm(H.pare,{vezes:1});
+  $('t1').onclick=()=>{ S.tier=1; pay(); };
+  $('t2').onclick=()=>{ S.tier=2; pay(); };
+  $('test').onclick=()=>vibrate(V.stop);
 }
 
-function revisao(){
-  render(`${bar('Pix')}<section class="screen">
-    <div class="who"><div class="avatar">${PIX.ini}</div><div><b>${PIX.nome}</b><p class="muted">${PIX.chave}</p></div></div>
+/* ---------- Pagamento ---------- */
+function pay(){
+  show(`${topBar('Pix')}<section class="screen">
+    <div class="who"><div class="av">${PIX.ini}</div><div><b>${PIX.nome}</b><p class="muted">${PIX.chave}</p></div></div>
     <div><p class="muted">Valor</p><div class="amount">${PIX.valor}</div></div>
-    <div class="list"><div><span class="muted">Quando</span><b>Agora</b></div><div><span class="muted">Mensagem</span><span>—</span></div></div>
     <div class="grow"></div>
-    <button class="btn green" id="go">Pagar</button>
-  </section>`);
-  $('go').onclick=()=>S.tier===1?camada1():c2Pare();
+    <button class="btn b-primary" id="go">Pagar</button>
+  </section>`, '',
+  `<p>Tela de pagamento comum. O modelo de risco roda quando a pessoa toca em Pagar.</p>`);
+  $('go').onclick = () => S.tier===1 ? check() : (S.onCall ? onCall() : stop());
 }
 
-// ---- Camada 1: bottom sheet curto ----
-const POOL1=[
-  {id:'falando',t:'Tem alguém falando com você agora?',o:[['sim','Sim'],['nao','Não']],risk:'sim'},
-  {id:'antes',t:`Já fez Pix pro ${PIX.primeiro}?`,o:[['sim','Já'],['nao','Primeira vez']],risk:'nao'},
-  {id:'segredo',t:'Pediram pra você não contar?',o:[['sim','Sim'],['nao','Não']],risk:'sim'},
-  {id:'pressa',t:'Disseram que é urgente?',o:[['sim','Sim'],['nao','Não']],risk:'sim'},
+/* ---------- Camada 1: confere rapidinho ---------- */
+const POOL = [
+  { id:'agora',   t:'Alguém tá te pedindo pra fazer isso agora?', o:[['s','Sim'],['n','Não']], risk:'s' },
+  { id:'pressa',  t:'Disseram que é urgente?', o:[['s','Sim'],['n','Não']], risk:'s' },
+  { id:'segredo', t:'Pediram pra não contar pra ninguém?', o:[['s','Sim'],['n','Não']], risk:'s' },
+  { id:'numero',  t:`O ${PIX.primeiro} te pediu de um número novo?`, o:[['s','Sim'],['n','Não'],['x','Ele não pediu']], risk:'s' },
 ];
-function camada1(){
-  const qs=shuffle(POOL1).slice(0,2);
-  revisao();
-  buzz(H.aviso);
-  const scrim=document.createElement('div'); scrim.className='scrim';
-  scrim.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Pausa rápida">
-    <div class="grip"></div>
-    <span class="tag amber">Pausa rápida</span>
-    <h2>Só confirmando</h2>
-    ${qs.map(q=>`<div class="q"><span class="q-title">${q.t}</span>${opts(q.id,q.o)}</div>`).join('')}
-    <button class="btn green" id="cancel">Cancelar Pix</button>
-    <button class="btn outline hold" id="cont" disabled><span class="fill"></span><span>Segure pra continuar</span></button>
-  </div>`;
-  $phone.appendChild(scrim);
-  const cont=$('cont');
-  bindOpts(()=>{ if(qs.every(q=>S.answers[q.id])) cont.disabled=false; });
-  $('cancel').onclick=cancelado;
-  holdButton(cont,2000,()=>{ qs.some(q=>S.answers[q.id]===q.risk) ? (S.tier=2,c2Pare(true)) : enviado(); });
+function check(){
+  const q = POOL[Math.floor(Math.random()*POOL.length)];
+  vibrate(V.check);
+  show(`${topBar('Confere rapidinho')}<section class="screen">
+    <h2>É pra essa pessoa mesmo?</h2>
+    <div class="payee">
+      <div class="who"><div class="av">${PIX.ini}</div><div><b>${PIX.nome}</b><p class="muted">${PIX.banco}</p></div></div>
+      <span class="flag">Primeira vez que você paga</span>
+      <div class="row"><span class="muted">Valor</span><b>${PIX.valor}</b></div>
+    </div>
+    <div class="q"><b>${q.t}</b>${chips(q.id,q.o)}</div>
+    <div class="grow"></div>
+    <div class="stack">
+      <button class="btn b-primary" id="pay" disabled>Pagar</button>
+      <button class="btn b-secondary" id="later">Deixar pra amanhã</button>
+      <button class="btn b-text" id="cancel">Cancelar</button>
+    </div>
+  </section>`, '',
+  `<p><b>Confirmar o nome</b> do favorecido evitou A$ 40 mi em golpes no CommBank. <b>Botões de saída visíveis</b> foram a intervenção mais eficaz do estudo britânico: com alerta só no risco, −81% de golpes. A pergunta muda a cada vez.</p>${cite('cba','notts')}`);
+  onChips(()=>{ $('pay').disabled=false; });
+  $('pay').onclick = () => S.a[q.id]===q.risk ? (S.onCall ? onCall() : stop()) : done('paid');
+  $('later').onclick = () => done('later');
+  $('cancel').onclick = () => done('cancel');
 }
 
-// ---- Camada 2: tela cheia ----
-const total2=()=>S.onCall||S.hadCall?5:4;
-function c2Pare(escalou){
-  render(`${bar('',true)}<section class="screen">
-    ${dots(1,total2())}
-    <div class="bigicon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 16.5H2.5z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg></div>
-    <h1>Opa, calma aí.</h1>
-    <p>${escalou?'Pelas suas respostas, isso':'Isso'} parece golpe.</p>
-    <div class="quote">“Não desliga, responde que é pra um conhecido.”</div>
-    <p><b>Alguém te disse o que responder aqui? É golpe.</b></p>
+/* ---------- Camada 2: ligação ativa ---------- */
+const VARIANTS = ['v-hazard','v-red','v-paper'];
+const TITLES   = ['Pare.','Pode ser golpe.','Calma aí.'];
+function nextVariant(){ const v=VARIANTS[S.variant%3]; S.variant++; return v; }
+
+function onCall(){
+  const v = nextVariant();
+  show(`<div class="stripes"></div>${topBar()}<section class="screen">
+    <div class="mark">${ICON.phone}</div>
+    <h1 class="big">Você está numa ligação.</h1>
+    <p class="say">A gente não está te ligando.</p>
     <div class="grow"></div>
-    <button class="btn green" id="cancel">Não quero pagar</button>
-    <button class="btn outline" id="next" disabled>Aguarde <span id="cd">5</span>s</button>
-  </section>`,'stop');
-  alarm(H.pare);
-  let n=5; const next=$('next');
-  const iv=setInterval(()=>{ n--; if(n>0) $('cd').textContent=n; else { clearInterval(iv); next.disabled=false; next.textContent='Quero revisar'; } },1000);
-  $('cancel').onclick=()=>{clearInterval(iv);cancelado();};
-  next.onclick=()=>{clearInterval(iv);c2Perguntas();};
+    <div class="stack">
+      <button class="btn b-primary" id="hang">Desligar a ligação</button>
+      <button class="btn b-secondary" id="cancel">Cancelar Pix</button>
+    </div>
+  </section>`, 'alert '+v,
+  `<p>Sinal do aparelho vale mais que resposta, porque golpistas <b>ditam o que a vítima deve responder</b>. O Android já faz isso em apps financeiros: alerta, <b>30s de pausa</b> e botão para encerrar a ligação. O Monzo mostra no app se o banco está mesmo ligando.</p>${cite('andr','monzo','fos')}`);
+  alarm(V.call);
+  $('cancel').onclick = () => done('cancel');
+  $('hang').onclick = () => { S.onCall=false; pause30(v); };
+}
+function pause30(v){
+  show(`<div class="stripes"></div>${topBar()}<section class="screen">
+    <div class="mark">${ICON.clock}</div>
+    <h1 class="big">Respira.</h1>
+    <div class="timer" id="tm" role="timer">30</div>
+    <p class="muted">Ninguém do banco pede Pix por telefone.</p>
+    <div class="grow"></div>
+    <div class="stack">
+      <button class="btn b-primary" id="cancel">Cancelar Pix</button>
+      <button class="btn b-secondary" id="next" disabled>Continuar</button>
+      <button class="btn b-text" id="skip">Pular espera (protótipo)</button>
+    </div>
+  </section>`, 'alert '+v,
+  `<p>Os 30 segundos copiam o Android. O golpe depende de urgência, e tempo desmonta o roteiro.</p>${cite('andr')}`);
+  let n=30; const tm=$('tm'), next=$('next');
+  const iv=setInterval(()=>{ n--; tm.textContent=n; if(n<=0){ clearInterval(iv); next.disabled=false; } },1000);
+  $('cancel').onclick=()=>{ clearInterval(iv); done('cancel'); };
+  next.onclick=()=>{ clearInterval(iv); stop(v); };
+  $('skip').onclick=()=>{ clearInterval(iv); stop(v); };
 }
 
-const GENERIC=/^(reconhe[cç]o|conhe[cç]o|é meu amigo|e meu amigo|é conhecido|confio|ok|sim|pode)\b/i;
-function c2Perguntas(){
-  render(`${bar('Suspeita de golpe')}<section class="screen">
-    ${dots(2,total2())}
-    <h2>Rapidinho, sobre o ${PIX.primeiro}</h2>
-    <div class="q"><span class="q-title">Como ele te pediu?</span>${opts('canal',[['whats','WhatsApp'],['lig','Ligação'],['sms','SMS'],['pess','Pessoalmente']])}</div>
-    <div class="q"><span class="q-title">Você ouviu a voz dele num número salvo?</span>${opts('voz',[['sim','Sim'],['nao','Não'],['nsei','Não sei']])}</div>
-    <div class="q"><label class="q-title" for="why">O Pix é pra quê?</label>
-      <input type="text" id="why" maxlength="140" placeholder="Ex.: minha parte do presente da mãe" autocomplete="off">
-      <span class="hint" id="h">Escreva com suas palavras</span></div>
+/* ---------- Camada 2: tela polimórfica ---------- */
+function stop(v){
+  v = v || nextVariant();
+  show(`<div class="stripes"></div>${topBar()}<section class="screen">
+    <div class="mark">${ICON.alert}</div>
+    <h1 class="big">${TITLES[VARIANTS.indexOf(v)]}</h1>
+    <p class="say">Se alguém te disse o que responder aqui, é golpe.</p>
+    <div class="q"><b>Quem te pediu esse Pix?</b>${chips('quem',[['conhecido','Conhecido por mensagem'],['central','Banco ou central'],['vendedor','Vendedor'],['eu','Ninguém, fui eu']])}</div>
+    <div class="q"><b>Pediram pressa ou segredo?</b>${chips('pressa',[['s','Sim'],['n','Não']])}</div>
     <div class="grow"></div>
-    <button class="btn green" id="cancel">Não quero pagar</button>
-    <button class="btn outline" id="next" disabled>Continuar</button>
-  </section>`);
-  const why=$('why'),h=$('h'),next=$('next');
-  const check=()=>{ const v=why.value.trim(), bad=v.length>0&&GENERIC.test(v)&&v.length<40;
-    h.textContent=bad?'Genérico demais. Pra quê é o dinheiro?':'Escreva com suas palavras'; h.className='hint'+(bad?' bad':'');
-    next.disabled=!(v.length>=15&&!bad&&S.answers.canal&&S.answers.voz); };
-  why.oninput=check; bindOpts(check);
-  $('cancel').onclick=cancelado;
-  next.onclick=()=>{ if(S.answers.voz!=='sim') buzz(H.aviso); S.onCall?c2Ligacao():c2Espera(); };
+    <div class="stack">
+      <button class="btn b-primary" id="cancel">Cancelar Pix</button>
+      <button class="btn b-secondary" id="next" disabled>Continuar</button>
+    </div>
+  </section>`, 'alert '+v,
+  `<p>Este alerta <b>muda de visual a cada vez</b> (3 versões: simule de novo para ver). Alertas polimórficos resistem à habituação, medida por fMRI e em campo. <b>Fugir da cor da marca</b> e fazer <b>perguntas específicas</b> cria a pausa cognitiva.</p>${cite('byu','ukf')}`);
+  alarm(V.stop);
+  onChips(()=>{ $('next').disabled = !(S.a.quem && S.a.pressa); });
+  $('cancel').onclick = () => done('cancel');
+  $('next').onclick = () => decide(v);
 }
 
-function c2Ligacao(){
-  render(`${bar('',true)}<section class="screen">
-    ${dots(3,5)}
-    <div class="bigicon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/><path d="M3 3l18 18"/></svg></div>
-    <h1>Desliga a ligação.</h1>
-    <p class="muted">O banco nunca pede pra ficar na linha durante um Pix.</p>
+/* ---------- Camada 2: aviso sob medida + saídas claras ---------- */
+const TIPS = {
+  conhecido:`Liga pro ${PIX.primeiro} no número antigo antes de pagar.`,
+  central:'Banco não pede Pix. É o golpe da falsa central.',
+  vendedor:'Manda o print do anúncio que a gente confere.',
+  eu:'Confere se o nome é de quem você espera.'
+};
+function decide(v){
+  const risky = S.a.pressa==='s' || S.a.quem==='central';
+  show(`<div class="stripes"></div>${topBar()}<section class="screen">
+    <h2>${risky?'Tem cara de golpe.':'Última checada.'}</h2>
+    <div class="tip">${TIPS[S.a.quem]}</div>
     <div class="grow"></div>
-    <button class="btn green" id="cancel">Não quero pagar</button>
-    <button class="btn outline" id="hung">Já desliguei</button>
-  </section>`,'stop');
-  alarm(H.ligacao);
-  $('cancel').onclick=cancelado;
-  $('hung').onclick=()=>{S.onCall=false;S.hadCall=true;c2Espera();};
+    <div class="stack">
+      <button class="btn b-primary" id="cancel">Cancelar Pix</button>
+      <button class="btn b-secondary" id="later">Agendar pra daqui 1h</button>
+      <button class="btn b-secondary" id="print">Mandar print pra análise</button>
+      <button class="btn b-text hold" id="pay"><i></i><span>Segure pra pagar mesmo assim</span></button>
+    </div>
+  </section>`, 'alert '+v,
+  `<p>Aviso <b>sob medida</b> para o golpe provável, em uma frase. Os golpes mais comuns no Brasil são a falsa central (32%) e o falso conhecido no WhatsApp (31%). <b>Agendar</b> e <b>mandar print</b> são saídas que não negam o Pix. Na Starling, a análise de print triplicou o cancelamento de pagamentos arriscados.</p>${cite('feb','star')}`);
+  if (risky) vibrate(V.check);
+  $('cancel').onclick = () => done('cancel');
+  $('later').onclick = () => done('later');
+  $('print').onclick = printSheet;
+  hold($('pay'), 3000, () => done('paid'));
+}
+function printSheet(){
+  const sc=document.createElement('div'); sc.className='scrim';
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Análise de print">
+    <div class="grip"></div><h2>Analisando o print…</h2><p class="muted">Lendo a conversa (simulação)</p></div>`;
+  phone.appendChild(sc);
+  setTimeout(()=>{
+    if(!sc.isConnected) return;
+    vibrate(V.check);
+    sc.querySelector('.sheet').innerHTML=`<div class="grip"></div>
+      <h2>Achamos 3 sinais de golpe</h2>
+      <div class="sig">Número que não está nos seus contatos</div>
+      <div class="sig">Pedido de urgência: “preciso agora”</div>
+      <div class="sig">A conta não é do ${PIX.primeiro}</div>
+      <button class="btn b-primary" id="sc">Cancelar Pix</button>
+      <button class="btn b-text" id="sb">Voltar</button>`;
+    $('sc').onclick=()=>done('cancel'); $('sb').onclick=()=>sc.remove();
+  },1600);
 }
 
-function c2Espera(){
-  const t=total2(), step=t===5?4:3;
-  const hhmm=new Date(Date.now()+30*60000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  buzz(H.aviso);
-  render(`${bar('Pix agendado')}<section class="screen">
-    ${dots(step,t)}
-    <div class="bigicon amber"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-    <h2>Seu Pix sai às ${hhmm}</h2>
-    <div class="timer" id="tm" aria-live="off">30:00</div>
-    <p class="muted">Liga pro ${PIX.primeiro} no número que você já tem.</p>
-    <button class="btn outline" id="callc">Ligar pro ${PIX.primeiro}</button>
-    <p class="note" id="st" hidden></p>
+/* ---------- Resultado ---------- */
+function done(kind){
+  const R = {
+    cancel:{ icon:ICON.check, h:'Pix cancelado', p:'Seu dinheiro tá seguro.', v:V.ok },
+    later: { icon:ICON.clock, h:'Pix agendado', p:'Dá pra cancelar até lá.', v:V.ok },
+    paid:  { icon:ICON.check, h:'Pix enviado', p:'Caiu em golpe? Conteste no app o quanto antes.', v:V.tap }
+  }[kind];
+  show(`<section class="screen"><div class="grow"></div>
+    <div class="av" style="width:72px;height:72px">${R.icon}</div>
+    <h1>${R.h}</h1><p class="muted">${R.p}</p>
     <div class="grow"></div>
-    <button class="btn green" id="cancel">Cancelar Pix</button>
-    <button class="btn text" id="skip">Pular espera (protótipo)</button>
-  </section>`);
-  let s=1800; const tm=$('tm');
-  const iv=setInterval(()=>{ s--; tm.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; },1000);
-  $('callc').onclick=()=>{ buzz(H.tap); $('st').hidden=false; $('st').textContent='Abre seus contatos. Nunca um número novo.'; };
-  $('cancel').onclick=()=>{clearInterval(iv);cancelado();};
-  $('skip').onclick=()=>{clearInterval(iv);c2Final(step+1,t);};
+    <button class="btn b-primary" id="again">Simular de novo</button>
+  </section>`, '',
+  kind==='paid'
+    ? `<p>Se foi golpe, o MED 2.0 (obrigatório desde fev/2026) permite rastrear e bloquear o dinheiro em mais de uma conta.</p>${cite('med')}`
+    : `<p>Cancelar ou adiar sem culpa. Essas saídas mantiveram o efeito mesmo depois de várias exposições (−94% no 3º golpe), enquanto avisos de texto perderam força.</p>${cite('notts')}`);
+  vibrate(R.v);
+  $('again').onclick=home;
 }
 
-function c2Final(step,t){
-  buzz(H.aviso);
-  render(`${bar('Confirmar Pix')}<section class="screen">
-    ${dots(step,t)}
-    <h2>Confirme de memória</h2>
-    <div class="q"><label class="q-title" for="nm">Primeiro nome</label><input type="text" id="nm" autocomplete="off" onpaste="return false"></div>
-    <div class="q"><label class="q-title" for="vl">Valor (R$)</label><input type="text" id="vl" inputmode="numeric" autocomplete="off" onpaste="return false"></div>
-    <div class="grow"></div>
-    <button class="btn green" id="cancel">Não quero pagar</button>
-    <button class="btn outline hold" id="cont" disabled><span class="fill"></span><span>Segure pra pagar</span></button>
-  </section>`);
-  const nm=$('nm'),vl=$('vl'),cont=$('cont');
-  const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase();
-  const upd=()=>{ const d=vl.value.replace(/\D/g,''); cont.disabled=!(norm(nm.value)===norm(PIX.primeiro)&&(d===PIX.valorNum||d===PIX.valorNum+'00')); };
-  nm.oninput=upd; vl.oninput=upd;
-  $('cancel').onclick=cancelado;
-  holdButton(cont,2500,enviado);
-}
-
-// ---- Resultados ----
-function cancelado(){
-  buzz(H.ok);
-  render(`<section class="screen"><div class="grow"></div>
-    <div class="bigicon ok"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-    <h1>Pix cancelado</h1>
-    <p class="muted">Seu dinheiro tá seguro.</p>
-    <div class="grow"></div>
-    <button class="btn green" id="again">Simular de novo</button></section>`);
-  $('again').onclick=inicio;
-}
-function enviado(){
-  buzz(H.tap);
-  render(`<section class="screen"><div class="grow"></div>
-    <div class="bigicon amber"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></div>
-    <h1>Pix enviado</h1>
-    <p class="muted">Caiu em golpe? Conteste o Pix no app o quanto antes.</p>
-    <div class="grow"></div>
-    <button class="btn green" id="again">Simular de novo</button></section>`);
-  $('again').onclick=inicio;
-}
-
-inicio();
+home();
 </script>
