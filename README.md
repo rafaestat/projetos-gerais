@@ -1,15 +1,22 @@
-# 🚗 Corrida da Lara
+# 🏎️ Corrida da Lara — Kart Arco-Íris
 
-Um joguinho de carrinho simples e colorido, feito especialmente para a **Lara** (e outras crianças pequenas, a partir de uns 3–5 anos) jogarem no celular Android.
+Uma corrida de kart no estilo **Mario Kart**, colorida e fácil, feita especialmente para a
+**Lara** (e outras crianças a partir de uns 3–5 anos) jogar no celular Android.
 
 ## Como se joga
 
-- **Arraste o dedo** na tela para guiar o carrinho de um lado para o outro.
-- Pegue as **estrelinhas ⭐** para ganhar pontos.
-- **Desvie** dos outros carrinhos. Cada batida tira um ❤️ (são 3).
-- Antes de começar, dá pra **escolher a cor** do carrinho.
+- **Arraste o dedo** na tela para dirigir — o kart acelera sozinho.
+- Passe nas **caixas ❓** para ganhar um item e toque no **botão redondo** para usar:
+  🍄 turbo · 🍌 banana · 🐚 concha teleguiada · 🌟 estrela invencível · ⚡ raio que encolhe todo mundo.
+- Fique nas **curvas** para carregar o **mini-turbo** (faíscas azul → laranja → rosa).
+- Pegue **moedas** (até 10) para ficar mais rápida, pule nas **rampas** e passe nos **turbos 🔥**.
+- **Largada turbo:** toque na tela quando aparecer o número **2**.
+- **Copa:** 4 pistas seguidas, com pontos e troféu. **Corrida livre:** escolha a pista.
+- 3 velocidades: 🐢 Fácil, 🐇 Médio e 🚀 Rápido. 10 personagens e 9 cores de kart.
 
-O jogo é bem tranquilo e fica mais rápido bem devagarzinho, pensado para crianças.
+No computador: setas ← → para dirigir, espaço para usar item, P para pausar.
+
+O plano do projeto (o que já foi feito e o que vem a seguir) está em [`ROADMAP.md`](ROADMAP.md).
 
 ## Como jogar no Android (3 jeitos)
 
@@ -47,7 +54,8 @@ python3 -m http.server 8000
 |---|---|
 | `index.html` | Página principal |
 | `style.css` | Estilos / visual das telas |
-| `game.js` | Toda a lógica do jogo (canvas) |
+| `game.js` | Toda a lógica do jogo (pistas, karts, itens, música) |
+| `ROADMAP.md` | Plano do projeto: sprints e próximos passos |
 | `manifest.json` | Configuração para virar "app" (PWA) |
 | `sw.js` | Service worker (jogar offline) |
 | `icon.svg` | Ícone do app |
