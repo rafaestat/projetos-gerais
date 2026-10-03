@@ -12,6 +12,9 @@ Uma corrida de kart no estilo **Mario Kart**, colorida e fácil, feita especialm
 - Pegue **moedas** (até 10) para ficar mais rápida, pule nas **rampas** e passe nos **turbos 🔥**.
 - **Largada turbo:** toque na tela quando aparecer o número **2**.
 - **Copa:** 4 pistas seguidas, com pontos e troféu. **Corrida livre:** escolha a pista.
+- **Atalhos secretos:** em cada pista tem uma placa com seta e uma trilha de estrelinhas ✨ que leva a um
+  lugar secreto (🚀 foguete ao espaço, 🌊 túnel no fundo do mar ou 🌈 escorregador nas nuvens).
+- **🚀 Modo Espaço:** uma corrida em cada planeta (Terra, Lua, Marte e Saturno), viajando pelo espaço entre eles.
 - 3 velocidades: 🐢 Fácil, 🐇 Médio e 🚀 Rápido. 10 personagens e 9 cores de kart.
 
 No computador: setas ← → para dirigir, espaço para usar item, P para pausar.

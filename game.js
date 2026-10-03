@@ -82,6 +82,7 @@
       layout: [[0, 40, 0, 0, 0], [20, 40, 20, 2.6, 0], [20, 30, 20, 0, 700], [20, 30, 20, 0, -700], [20, 50, 20, -3, 0],
         [0, 30, 0, 0, 0], [15, 25, 15, 2.2, 450], [15, 25, 15, -2.2, -450], [0, 40, 0, 0, 0], [25, 50, 25, -3.2, 0], [0, 30, 0, 0, 0]],
       ramps: [0.68],
+      secret: { kind: "space", at: 0.42, side: -1 },
     },
     {
       name: "Praia do Sol", icon: "🏖️", song: 1,
@@ -94,6 +95,7 @@
       layout: [[0, 40, 0, 0, 0], [20, 30, 20, -2.4, 0], [10, 25, 10, 0, 900], [10, 25, 10, 0, -900], [20, 40, 20, 3, 0],
         [0, 30, 0, 0, 0], [15, 20, 15, -2.8, 350], [15, 20, 15, 2.8, -350], [0, 45, 0, 0, 0], [20, 40, 20, 3.4, 0], [0, 30, 0, 0, 0]],
       ramps: [0.5, 0.86],
+      secret: { kind: "sea", at: 0.36, side: 1 },
     },
     {
       name: "Reino dos Doces", icon: "🍭", song: 2,
@@ -107,6 +109,7 @@
         [20, 30, 20, -2.6, -500], [0, 30, 0, 0, 0], [20, 60, 20, 3.6, 0], [0, 30, 0, 0, 1100], [0, 30, 0, 0, -1100],
         [15, 25, 15, -2.4, 0], [0, 35, 0, 0, 0]],
       ramps: [0.4],
+      secret: { kind: "sky", at: 0.47, side: -1 },
     },
     {
       name: "Estrada Arco-Íris", icon: "🌈", song: 3,
@@ -119,10 +122,62 @@
       layout: [[0, 40, 0, 0, 0], [25, 40, 25, 2, 1300], [25, 40, 25, -2, -1300], [0, 30, 0, 0, 0], [20, 50, 20, 3.5, 0],
         [10, 20, 10, -1.6, 650], [10, 20, 10, 1.6, -650], [0, 40, 0, 0, 0], [20, 40, 20, -3.6, 0], [0, 40, 0, 0, 0]],
       ramps: [0.3, 0.75],
+      secret: { kind: "space", at: 0.5, side: 1 },
+    },
+
+    /* ----- Viagem Espacial: uma pista em cada planeta ----- */
+    {
+      name: "Terra", icon: "🌍", song: 0, space: true, planet: "earth",
+      th: {
+        sky: ["#3fa9f5", "#d4f1ff"], sun: "#fff3b0", cloud: "#ffffff", sea: "#2a9fd6", far: "#7cc26b", near: "#5fb34e",
+        grass: ["#5dc24a", "#6fd05a"], rumble: ["#4db5ff", "#ffffff"], road: ["#5a5a66", "#62626e"], lane: "#ffffff",
+        dust: "rgba(120,90,50,0.6)",
+        decor: ["🌳", "🏠", "🌲", "🌻", "🏡", "🌳", "🐄", "🐑"], marks: ["🏙️", "🎡", "🗼", "🏰", "🚂"],
+      },
+      layout: [[0, 40, 0, 0, 0], [20, 40, 20, -2.6, 0], [15, 30, 15, 0, 600], [15, 30, 15, 2.4, -600], [0, 30, 0, 0, 0],
+        [20, 40, 20, -3, 300], [20, 40, 20, 3, -300], [0, 40, 0, 0, 0], [25, 40, 25, 2.8, 0], [0, 30, 0, 0, 0]],
+      ramps: [0.6],
+    },
+    {
+      name: "Lua", icon: "🌕", song: 3, space: true, planet: "moon",
+      th: {
+        sky: ["#000005", "#16162c"], stars: true, planet: "earth", planetR: 0.12, far: "#5a5a66", near: "#7a7a86",
+        grass: ["#9a9aa6", "#a8a8b4"], rumble: ["#ffffff", "#ff5d5d"], road: ["#3a3a44", "#42424c"], lane: "#ffe14d",
+        dust: "rgba(225,225,235,0.8)", grav: 0.22,
+        decor: ["🌑", "🛰️", "🧑‍🚀", "🚩", "🌑", "⭐"], marks: ["🚀", "🛸", "🛰️", "📡"],
+      },
+      layout: [[0, 40, 0, 0, 0], [20, 30, 20, 1.8, 900], [20, 30, 20, -1.8, -900], [0, 40, 0, 0, 0], [20, 40, 20, -2.8, 0],
+        [10, 30, 10, 0, 1200], [10, 30, 10, 0, -1200], [20, 40, 20, 3, 0], [0, 40, 0, 0, 0]],
+      ramps: [0.22, 0.48, 0.82],
+    },
+    {
+      name: "Marte", icon: "🔴", song: 2, space: true, planet: "mars",
+      th: {
+        sky: ["#b9502a", "#f3b07a"], sun: "#fff0d0", far: "#a8432a", near: "#c95a35", peaks: true,
+        grass: ["#d8693c", "#e07646"], rumble: ["#ffffff", "#5a2a1a"], road: ["#6b3a2a", "#74412f"], lane: "#ffd8a8",
+        dust: "rgba(200,90,50,0.7)", grav: 0.38,
+        decor: ["🌋", "👽", "🤖", "🛰️", "⛰️", "🛸"], marks: ["🌋", "🛸", "🤖", "🚀"],
+      },
+      layout: [[0, 40, 0, 0, 0], [15, 25, 15, 3.2, 400], [15, 25, 15, -3.2, -400], [0, 30, 0, 0, 0], [20, 50, 20, 3.6, 0],
+        [0, 25, 0, 0, 800], [0, 25, 0, 0, -800], [15, 30, 15, -2.8, 0], [15, 30, 15, 2.8, 0], [0, 35, 0, 0, 0]],
+      ramps: [0.55],
+    },
+    {
+      name: "Saturno", icon: "🪐", song: 3, space: true, planet: "saturn",
+      th: {
+        sky: ["#120a2a", "#4a2a6a"], stars: true, planet: "saturn", planetR: 0.17, far: "#6a4a8a", near: "#8a6aa0",
+        grass: ["#e8d3a0", "#dcc590"], rumble: ["#ffffff", "#9be7ff"], road: ["#4a3a6a", "#544470"], lane: "#9be7ff",
+        dust: "rgba(240,220,170,0.7)", grav: 0.45,
+        decor: ["💎", "❄️", "☄️", "✨", "⭐", "🧊"], marks: ["🛸", "☄️", "🌟", "🚀"],
+      },
+      layout: [[0, 40, 0, 0, 0], [30, 50, 30, 2.2, 0], [0, 30, 0, 0, 700], [0, 30, 0, 0, -700], [30, 50, 30, -2.4, 0],
+        [0, 40, 0, 0, 0], [20, 40, 20, 3.2, 500], [20, 40, 20, -1.6, -500], [0, 40, 0, 0, 0]],
+      ramps: [0.4, 0.7],
     },
   ];
+  const CUP_LIST = [0, 1, 2, 3], SPACE_LIST = [4, 5, 6, 7];
 
-  const SMALL_DECOR = ["🍄", "🌷", "🌼", "🦀", "🐚", "🏐", "🌺", "🍓", "🍬", "🍪"];
+  const SMALL_DECOR = ["🍄", "🌷", "🌼", "🦀", "🐚", "🏐", "🌺", "🍓", "🍬", "🍪", "🚩", "🧑‍🚀", "👽", "🤖", "💎", "❄️", "🧊", "🐑", "🐄"];
 
   /* ---------------- Tela e projeção --------------------------------- */
   const SEG_L = 200, DRAW = 72, CAM_DIST = 1100, LAPS = 3, NR = 8, START = 12;
@@ -242,6 +297,9 @@
     count: (go) => tone(go ? 880 : 440, go ? 0.5 : 0.18, "square", 0.16),
     win: () => arp([72, 76, 79, 84, 79, 84, 88], 0.13, 0.25, "triangle", 0.2),
     blip: () => tone(700, 0.08, "square", 0.1),
+    chime: () => arp([88, 91, 95, 100], 0.06, 0.14, "sine", 0.12),
+    secret: () => arp([84, 88, 91, 96, 100, 103], 0.06, 0.16, "triangle", 0.13),
+    rocket: () => { if (AC) noiseAt(AC.currentTime, 1.8, 0.2, 120); tone(70, 1.6, "sawtooth", 0.08, 0, 420); },
     pop: () => { if (AC) noiseAt(AC.currentTime, 0.3, 0.16, 500); tone(1400 + Math.random() * 800, 0.08, "triangle", 0.05, 0.05); },
   };
 
@@ -417,6 +475,20 @@
         if (!s.boxes && !s.coin) s.coin = { off: 0, taken: false, air: true };
       }
     }
+    // atalho secreto, com dicas: placa com seta + trilha de estrelinhas até a entrada
+    if (T.secret) {
+      let i = Math.floor(T.secret.at * N) % N;
+      const ok = (j) => Math.abs(segments[j].curve) < 0.8 && !segments[j].ramp && !segments[j].boxes;
+      for (let n = 0; n < 120 && !ok(i); n++) i = (i + 1) % N;
+      const side = T.secret.side;
+      segments[i].secret = { kind: T.secret.kind, side, x: side * 1.5 };
+      for (let k = 1; k <= 8; k++) segments[(i - k * 2 + N) % N].hint = side * (1.45 - k * 0.05);
+      segments[(i - 34 + N) % N].sign = side;
+      for (let j = i - 22; j <= i + 4; j++) {
+        const sg = segments[(j + N) % N];
+        sg.sprites = sg.sprites.filter((sp) => sp.off * side < 0 || Math.abs(sp.off) > 2.6);
+      }
+    }
     // céu
     clouds.length = 0;
     for (let i = 0; i < 6; i++) clouds.push({ x: Math.random(), y: 0.08 + Math.random() * 0.5, s: 0.6 + Math.random() * 0.9 });
@@ -466,6 +538,7 @@
     particles.length = 0;
     confetti.length = 0;
     targetNX = player.x;
+    secret = null;
     finishCount = 0; raceT = 0; shake = 0; flash = 0; msgT = 0; lastRank = NR; rocketOK = false;
     for (const s of segments) {
       if (s.coin) s.coin.taken = false;
@@ -586,7 +659,7 @@
     }
     if (r.jumpH > 0) {
       r.jumpH += r.jumpV * dt;
-      r.jumpV -= 0.55 * dt;
+      r.jumpV -= (T.th.grav || 0.55) * dt;
       r.trickA = Math.min(Math.PI * 2, r.trickA + 0.22 * dt);
       if (r.jumpH <= 0) {
         r.jumpH = 0;
@@ -644,6 +717,15 @@
           if (me) sfx.box();
         }
       }
+      if (me && s.sign && s.signLap !== r.lap) {
+        s.signLap = r.lap;
+        sfx.chime();
+        msg("✨ Siga as estrelinhas! ✨", "#ffe14d", 90);
+      }
+      if (me && s.secret && Math.abs(s.secret.x - r.x) < 0.42 && r.jumpH < 100) {
+        startSecret(s.secret.kind);
+        return;
+      }
       if (s.boost && r.jumpH <= 0 && Math.abs(s.boost.off - r.x) < 0.3 && r.boostT < 30) {
         r.boostT = 80;
         if (me) { sfx.boost(); msg("TURBO! 🔥", "#ffb347", 40); }
@@ -678,6 +760,7 @@
       b.age += dt;
       for (const o of racers) {
         if (o === b.owner && b.age < 40) continue;
+        if (o === player && secret) continue;
         if (Math.abs(wrapS(o.z - b.z)) < 120 && Math.abs(o.x - b.x) < 0.24 && o.jumpH < 60) {
           hit(o);
           b.dead = true;
@@ -699,6 +782,7 @@
       }
       for (const o of racers) {
         if (o === s.owner && s.life > 290) continue;
+        if (o === player && secret) continue;
         if (Math.abs(wrapS(o.z - s.z)) < 160 && Math.abs(o.x - s.x) < 0.28 && o.jumpH < 150) {
           hit(o);
           s.life = 0;
@@ -715,6 +799,7 @@
   function bumps(dt) {
     const P = player;
     for (const k of karts) {
+      if (secret) break;
       if (Math.abs(wrapS(k.z - P.z)) > 230 || Math.abs(k.x - P.x) > 0.3 || Math.abs(k.jumpH - P.jumpH) > 80) continue;
       if (P.starT > 0 && k.starT <= 0) { if (k.spinT <= 0) { hit(k); if (state === "race") sfx.bump(); } continue; }
       if (k.starT > 0 && P.starT <= 0) { if (P.spinT <= 0) hit(P); continue; }
@@ -753,8 +838,9 @@
       aiSteer(player, dt);
     }
     for (const k of karts) aiSteer(k, dt);
-    for (const r of racers) physics(r, dt);
-    for (const r of racers) pickups(r);
+    for (const r of racers) if (!(r === player && secret)) physics(r, dt);
+    if (secret) updateSecret(dt);
+    for (const r of racers) if (!(r === player && secret)) pickups(r);
     for (const r of racers) itemLogic(r, dt);
     updateBananas(dt);
     updateShells(dt);
@@ -840,7 +926,7 @@
   }
 
   function updateFx(dt) {
-    if (state !== "pause" && player) {
+    if (state !== "pause" && player && !secret) {
       const pw = (FOCAL / CAM_DIST) * KW;
       const lift = pw * 0.62 * (player.jumpH / 100);
       const show = state !== "count";
@@ -889,6 +975,7 @@
   let camX = 0, camY = 0, camZ = 0, frac = 0;
 
   function draw() {
+    if (secret) { drawSecret(); drawHUD(); return; }
     ctx.save();
     if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
     drawBackground();
@@ -1046,6 +1133,15 @@
       if (seg.ramp) drawRamp(r, next);
       if (seg.boost) drawBoostPad(r, seg.boost.off);
       if (r.si === START) drawFinishBanner(r);
+      if (seg.hint) {
+        const sz = r.F * 0.12 * ROAD_W;
+        ctx.globalAlpha = 0.6 + 0.4 * Math.sin(nowMs * 0.01 + r.si);
+        ctx.fillStyle = "hsl(" + Math.floor((nowMs * 0.3 + r.si * 30) % 360) + ",100%,75%)";
+        sparkle(r.x + r.F * seg.hint * ROAD_W, r.y - sz, sz, nowMs * 0.004 + r.si);
+        ctx.globalAlpha = 1;
+      }
+      if (seg.sign) drawSign(r, seg.sign);
+      if (seg.secret) drawEntrance(r, seg.secret);
       for (const sp of seg.sprites) drawEmo(sp.e, r.x + r.F * sp.off * ROAD_W, r.y, r.F * sp.s * ROAD_W);
       if (seg.coin && !seg.coin.taken) {
         const lift = seg.coin.air ? 0.45 * ROAD_W : 0.06 * ROAD_W;
@@ -1316,6 +1412,7 @@
       drawEmo("🌙", W * 0.8, HOR * 0.42, u * 0.16);
       drawEmo("🪐", W * 0.2, HOR * 0.38, u * 0.12);
     }
+    if (th.planet) drawPlanet(th.planet, W * 0.24, HOR * 0.42, u * (th.planetR || 0.12));
     if (th.cloud) {
       ctx.fillStyle = th.cloud;
       ctx.globalAlpha = 0.9;
@@ -1432,7 +1529,11 @@
       const age = msgMax - msgT;
       const sc = age < 8 ? 0.5 + age / 16 : 1;
       ctx.globalAlpha = clamp(msgT / 15, 0, 1);
-      outlined(msgText, W / 2, H * 0.3, clamp(u * 0.1, 26, 64) * sc, msgColor, "#2b1d4a");
+      let ms = clamp(u * 0.1, 26, 64);
+      ctx.font = "bold " + Math.round(ms) + "px " + FONT;
+      const mw = ctx.measureText(msgText).width;
+      if (mw > W * 0.9) ms *= (W * 0.9) / mw;
+      outlined(msgText, W / 2, H * 0.3, ms * sc, msgColor, "#2b1d4a");
       ctx.globalAlpha = 1;
     }
   }
@@ -1442,11 +1543,11 @@
   const pauseBtn = $("pause-btn");
   let itemKey = "";
   function syncButtons() {
-    const vis = state === "race" || state === "count";
+    const vis = (state === "race" || state === "count") && !secret;
     let icon = "", cls = "empty", n = "";
     if (vis && player.roulT > 0) { icon = ROULETTE[Math.floor(nowMs / 70) % ROULETTE.length]; cls = "rolling"; }
     else if (vis && player.item) { icon = ITEM_ICON[player.item]; cls = "ready"; n = player.itemN > 1 ? "x" + player.itemN : ""; }
-    const key = state + "|" + icon + "|" + cls + "|" + n;
+    const key = state + !!secret + "|" + icon + "|" + cls + "|" + n;
     if (key === itemKey) return;
     itemKey = key;
     itemBtn.className = (vis ? "" : "hidden ") + cls;
@@ -1461,6 +1562,7 @@
   function onPress() {
     if (state === "count" && countT <= 2.05) rocketOK = true;
     if (state === "party" && party.t > 150) endParty();
+    if (state === "travel" && travel.t > 120) endTravel();
   }
   canvas.addEventListener("touchstart", (e) => {
     e.preventDefault();
@@ -1483,7 +1585,7 @@
     if (k === "ArrowLeft" || k === "a") keyL = true;
     else if (k === "ArrowRight" || k === "d") keyR = true;
     else if (k === " " || k === "ArrowUp" || k === "x") {
-      if (state === "race") useItem(player);
+      if (state === "race" && !secret) useItem(player);
       e.preventDefault();
     } else if (k === "Escape" || k === "p") {
       if (state === "pause") resume();
@@ -1497,7 +1599,7 @@
   });
   itemBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    if (state === "race") useItem(player);
+    if (state === "race" && !secret) useItem(player);
     onPress();
   });
   pauseBtn.addEventListener("click", pause);
@@ -1534,6 +1636,7 @@
     });
     const tp = $("track-picker");
     TRACKS.forEach((t, i) => {
+      if (t.space) return;
       const b = document.createElement("button");
       b.className = "track-card";
       b.style.background = "linear-gradient(180deg," + t.th.sky[0] + "," + t.th.sky[1] + " 55%," + t.th.grass[0] + " 56%)";
@@ -1552,7 +1655,10 @@
       const p = save.trophies[c.id];
       const t = p === 1 ? "🏆" : p === 2 ? "🥈" : p === 3 ? "🥉" : "🏆";
       return '<div class="shelf-item' + (p ? "" : " empty") + '"><span class="t">' + t + "</span><span>" + c.label + "</span></div>";
-    }).join("");
+    }).join("") + (() => {
+      const p = save.trophies.space;
+      return '<div class="shelf-item' + (p ? "" : " empty") + '"><span class="t">' + (p === 2 ? "🥈" : p === 3 ? "🥉" : "🏆") + "</span><span>🚀 Espaço</span></div>";
+    })();
   }
 
   function goMenu() {
@@ -1577,11 +1683,12 @@
     state = "count";
     countT = 3.999;
     sfx.count(false);
-    raceLabel = (mode === "cup" ? "Corrida " + (gp.race + 1) + "/" + TRACKS.length + " · " : "") + T.icon + " " + T.name;
+    raceLabel = (gp ? (mode === "space" ? "Planeta " : "Corrida ") + (gp.race + 1) + "/" + gp.list.length + " · " : "") + T.icon + " " + T.name;
     show(null);
   }
 
   function playerFinished() {
+    secret = null;
     state = "finish";
     finishT = 210;
     const p = player.place;
@@ -1611,19 +1718,24 @@
     engineOff();
     const order = finalOrder();
     order.forEach((r, i) => { r.finished = true; r.place = i + 1; });
-    if (mode === "cup") order.forEach((r, i) => (gp.pts[r.ch.i] += PTS[i]));
+    if (gp) order.forEach((r, i) => (gp.pts[r.ch.i] += PTS[i]));
     const p = player.place, me = player.ch;
     resMedal.textContent = p <= 3 ? MEDALS[p - 1] : "🎉";
     resTitle.textContent = p === 1 ? (me.name + (me.fem ? " campeã!" : " campeão!")).toUpperCase() + " 🏆" : "Muito bem, " + me.name + "! 🎉";
     resSub.textContent = "Você chegou em " + p + "º lugar e pegou " + player.coins + " moeda" + (player.coins === 1 ? "" : "s") + "!";
     resTable.innerHTML = rowsHtml(order.map((r, i) => ({
       p: i + 1 + "º", e: r.e, name: r.name, me: r.isPlayer,
-      pts: mode === "cup" ? "+" + PTS[i] + " = " + gp.pts[r.ch.i] : "",
+      pts: gp ? "+" + PTS[i] + " = " + gp.pts[r.ch.i] : "",
     })));
-    if (mode === "cup") {
-      if (gp.race < TRACKS.length - 1) {
-        resNext.textContent = "PRÓXIMA PISTA ▶";
-        onNext = () => { gp.race++; startRace(gp.race); };
+    if (gp) {
+      if (gp.race < gp.list.length - 1) {
+        if (mode === "space") {
+          resNext.textContent = "VIAJAR PARA " + TRACKS[gp.list[gp.race + 1]].name.toUpperCase() + " 🚀";
+          onNext = () => { gp.race++; startTravel(); };
+        } else {
+          resNext.textContent = "PRÓXIMA PISTA ▶";
+          onNext = () => { gp.race++; startRace(gp.list[gp.race]); };
+        }
       } else {
         resNext.textContent = "VER TROFÉU 🏆";
         onNext = showTrophy;
@@ -1644,15 +1756,17 @@
     const st = racers.map((r) => ({ r, pts: gp.pts[r.ch.i] }))
       .sort((a, b) => b.pts - a.pts || (a.r.isPlayer ? -1 : b.r.isPlayer ? 1 : 0));
     const place = st.findIndex((x) => x.r.isPlayer) + 1;
-    const prev = save.trophies[CC.id];
-    if (place <= 3 && (!prev || place < prev)) save.trophies[CC.id] = place;
+    const key = mode === "space" ? "space" : CC.id, sp = mode === "space";
+    const prev = save.trophies[key];
+    if (place <= 3 && (!prev || place < prev)) save.trophies[key] = place;
     persist();
     if (place <= 3) {
       startParty({
         top: st.slice(0, 3).map((x) => x.r), place, big: ["🏆", "🥈", "🥉"][place - 1],
-        title: place === 1 ? (me.fem ? "CAMPEÃ DA COPA!" : "CAMPEÃO DA COPA!") : "TROFÉU DE " + place + "º!",
-        sub: "Copa " + CC.label + " · " + place + "º lugar geral",
-        say: place === 1 ? "Parabéns, " + me.name + "! Você ganhou a Copa!" : "Uau, " + me.name + "! Você ganhou um troféu!",
+        title: place === 1 ? (me.fem ? "CAMPEÃ " : "CAMPEÃO ") + (sp ? "DO ESPAÇO!" : "DA COPA!") : "TROFÉU DE " + place + "º!",
+        sub: (sp ? "Viagem Espacial " : "Copa ") + CC.label + " · " + place + "º lugar geral",
+        say: place === 1 ? "Parabéns, " + me.name + "! Você " + (sp ? (me.fem ? "é a campeã do Sistema Solar!" : "é o campeão do Sistema Solar!") : "ganhou a Copa!")
+          : "Uau, " + me.name + "! Você ganhou um troféu!",
         onDone: () => trophyScreen(st, place),
       });
       return;
@@ -1665,16 +1779,502 @@
     state = "results";
     show("results");
     resMedal.textContent = place === 1 ? "🏆" : place === 2 ? "🥈" : place === 3 ? "🥉" : "🎖️";
-    resTitle.textContent = place === 1 ? (me.name + (me.fem ? " campeã" : " campeão") + " da Copa!").toUpperCase()
+    const sp = mode === "space";
+    resTitle.textContent = place === 1 ? (me.name + (me.fem ? " campeã" : " campeão") + (sp ? " do Espaço!" : " da Copa!")).toUpperCase()
       : place <= 3 ? "Troféu de " + place + "º lugar! 🎉" : "Que corrida, " + me.name + "! 🎉";
-    resSub.textContent = "Copa " + CC.label + " · " + place + "º lugar geral";
+    resSub.textContent = (sp ? "Viagem Espacial " : "Copa ") + CC.label + " · " + place + "º lugar geral";
     resTable.innerHTML = rowsHtml(st.map((x, i) => ({ p: i + 1 + "º", e: x.r.e, name: x.r.name, me: x.r.isPlayer, pts: x.pts + " pts" })));
-    resNext.textContent = "NOVA COPA 🔄";
-    onNext = () => { gp = { race: 0, pts: CHARS.map(() => 0) }; startRace(0); };
+    resNext.textContent = sp ? "NOVA VIAGEM 🚀" : "NOVA COPA 🔄";
+    onNext = beginGP;
     resAlt.classList.add("hidden");
     confetti.length = 0;
     spawnConfetti(place <= 3 ? 180 : 80);
     sfx.win();
+  }
+
+  /* ---------------- Atalhos secretos -------------------------------- */
+  let secret = null;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = (t) => t * t * (3 - 2 * t);
+  const SECRET_TXT = { space: "🚀 FOGUETE SECRETO!", sea: "🌊 TÚNEL DO FUNDO DO MAR!", sky: "🌈 ESCORREGADOR NAS NUVENS!" };
+  const SEA_LIFE = ["🐠", "🐟", "🐡", "🐙", "🦑", "🐢", "🐬", "🐠", "🐟"];
+  const SKY_LIFE = ["🐦", "🦋", "🕊️", "🦄", "🦋", "🐦"];
+
+  function newCritter(pool, anywhere) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    return {
+      e: pool[Math.floor(Math.random() * pool.length)], dir,
+      x: anywhere ? Math.random() : dir > 0 ? -0.15 : 1.15, y: 0.12 + Math.random() * 0.5,
+      v: 0.0015 + Math.random() * 0.003, s: 0.07 + Math.random() * 0.09, ph: Math.random() * 9,
+    };
+  }
+
+  function startSecret(kind) {
+    const dur = 380;
+    // atalho de verdade: anda bem mais do que andaria pela pista
+    secret = { kind, t: 0, dur, rate: CC.top * 1.05 + 9000 / dur, life: [], bubbles: [], stars: [] };
+    const pool = kind === "sea" ? SEA_LIFE : SKY_LIFE;
+    for (let i = 0; i < 9; i++) secret.life.push(newCritter(pool, true));
+    for (let i = 0; i < 120; i++) secret.stars.push({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random() * 2 });
+    player.boostT = kind === "space" ? 1e9 : 0;
+    player.spinT = 0; player.jumpH = 0; player.driftT = 0; player.driftLvl = 0; player.off = false;
+    particles.length = 0;
+    sfx.secret();
+    if (kind === "space") sfx.rocket();
+  }
+
+  function updateSecret(dt) {
+    const S = secret;
+    S.t += dt;
+    player.z += S.rate * dt;
+    player.speed = CC.top;
+    const pool = S.kind === "sea" ? SEA_LIFE : SKY_LIFE;
+    for (let i = 0; i < S.life.length; i++) {
+      const c = S.life[i];
+      c.x += c.v * c.dir * dt;
+      if (c.x < -0.2 || c.x > 1.2) S.life[i] = newCritter(pool, false);
+    }
+    if (S.kind === "sea") {
+      if (Math.random() < 0.4) S.bubbles.push({ x: W / 2 + (Math.random() - 0.5) * W * 0.25, y: H * 0.78, r: 2 + Math.random() * 6, v: 1 + Math.random() * 2 });
+      if (Math.random() < 0.15) S.bubbles.push({ x: Math.random() * W, y: H + 10, r: 3 + Math.random() * 8, v: 0.8 + Math.random() * 1.5 });
+      if (Math.random() < 0.03) tone(600 + Math.random() * 500, 0.08, "sine", 0.05, 0, 1200);
+    }
+    for (const b of S.bubbles) b.y -= b.v * dt;
+    S.bubbles = S.bubbles.filter((b) => b.y > -20);
+    if (S.t >= S.dur) endSecret();
+  }
+
+  function endSecret() {
+    secret = null;
+    player.x = 0; player.steerX = 0; targetNX = 0;
+    player.boostT = 70;
+    player.jumpH = 160; player.jumpV = 0; player.trick = false; // cai de volta na pista
+    flash = 14;
+    msg("ATALHO SECRETO! 🤫✨", "#ffe14d", 90);
+    sfx.boost();
+  }
+
+  function puff(x, y, s) {
+    ctx.beginPath();
+    ctx.arc(x, y, s, 0, 7);
+    ctx.arc(x + s * 1.1, y + s * 0.25, s * 0.8, 0, 7);
+    ctx.arc(x - s * 1.1, y + s * 0.25, s * 0.8, 0, 7);
+    ctx.arc(x, y + s * 0.5, s * 0.9, 0, 7);
+    ctx.fill();
+  }
+
+  function drawSun(x, y, R) {
+    const g = ctx.createRadialGradient(x, y, R * 0.3, x, y, R * 3);
+    g.addColorStop(0, "rgba(255,220,120,0.65)");
+    g.addColorStop(1, "rgba(255,160,40,0)");
+    ctx.fillStyle = g;
+    circle(x, y, R * 3);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(nowMs * 0.0003);
+    ctx.fillStyle = "rgba(255,230,140,0.35)";
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      quad(Math.cos(a - 0.1) * R, Math.sin(a - 0.1) * R, Math.cos(a) * R * 2.1, Math.sin(a) * R * 2.1, Math.cos(a + 0.1) * R, Math.sin(a + 0.1) * R, 0, 0);
+    }
+    ctx.restore();
+    const c = ctx.createRadialGradient(x - R * 0.3, y - R * 0.3, R * 0.1, x, y, R);
+    c.addColorStop(0, "#fffbe0");
+    c.addColorStop(0.6, "#ffd23f");
+    c.addColorStop(1, "#ff9d00");
+    ctx.fillStyle = c;
+    circle(x, y, R);
+  }
+
+  const PLANET_COL = { earth: ["#8fdcff", "#1f6fd1"], moon: ["#ffffff", "#8e8e9a"], mars: ["#ffb98a", "#c4482a"], saturn: ["#fff0c4", "#c9a060"], jupiter: ["#ffe6c4", "#c4834a"] };
+  function planetRing(x, y, R, a0, a1) {
+    ctx.strokeStyle = "rgba(235,205,150,0.9)";
+    ctx.lineWidth = R * 0.22;
+    ctx.beginPath(); ctx.ellipse(x, y, R * 1.9, R * 0.5, -0.3, a0, a1); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,240,200,0.6)";
+    ctx.lineWidth = R * 0.06;
+    ctx.beginPath(); ctx.ellipse(x, y, R * 2.15, R * 0.6, -0.3, a0, a1); ctx.stroke();
+  }
+  function drawPlanet(k, x, y, R) {
+    if (R < 1) return;
+    if (k === "saturn") planetRing(x, y, R, Math.PI, Math.PI * 2);
+    const col = PLANET_COL[k];
+    const g = ctx.createRadialGradient(x - R * 0.35, y - R * 0.35, R * 0.1, x, y, R);
+    g.addColorStop(0, col[0]);
+    g.addColorStop(1, col[1]);
+    ctx.fillStyle = g;
+    circle(x, y, R);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, R, 0, 7);
+    ctx.clip();
+    if (k === "earth") {
+      ctx.fillStyle = "#4fc35a";
+      for (const [dx, dy, rx, ry] of [[-0.35, -0.2, 0.35, 0.25], [0.3, 0.25, 0.3, 0.4], [0.1, -0.55, 0.25, 0.12], [-0.2, 0.5, 0.2, 0.15]]) {
+        ctx.beginPath(); ctx.ellipse(x + dx * R, y + dy * R, rx * R, ry * R, 0.5, 0, 7); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      for (const [dx, dy, rx] of [[-0.1, -0.3, 0.4], [0.2, 0.1, 0.35], [-0.4, 0.35, 0.25]]) {
+        ctx.beginPath(); ctx.ellipse(x + dx * R, y + dy * R, rx * R, 0.06 * R, -0.2, 0, 7); ctx.fill();
+      }
+    } else if (k === "moon") {
+      ctx.fillStyle = "rgba(110,110,125,0.45)";
+      for (const [dx, dy, r] of [[-0.3, -0.25, 0.18], [0.35, 0.1, 0.22], [-0.05, 0.45, 0.14], [0.1, -0.5, 0.1], [-0.5, 0.25, 0.1]]) circle(x + dx * R, y + dy * R, r * R);
+    } else if (k === "mars") {
+      ctx.fillStyle = "rgba(120,40,20,0.45)";
+      for (const [dx, dy, rx, ry] of [[-0.3, 0, 0.4, 0.15], [0.3, 0.3, 0.3, 0.12], [0.2, -0.3, 0.25, 0.1]]) {
+        ctx.beginPath(); ctx.ellipse(x + dx * R, y + dy * R, rx * R, ry * R, 0.2, 0, 7); ctx.fill();
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(x, y - R * 0.92, R * 0.35, R * 0.14, 0, 0, 7); ctx.fill();
+    } else {
+      ctx.fillStyle = "rgba(150,90,40,0.3)";
+      for (let i = -3; i <= 3; i++) ctx.fillRect(x - R, y + i * R * 0.27 - R * 0.06, R * 2, R * 0.12);
+      if (k === "jupiter") {
+        ctx.fillStyle = "rgba(200,70,40,0.6)";
+        ctx.beginPath(); ctx.ellipse(x + R * 0.3, y + R * 0.3, R * 0.2, R * 0.1, 0, 0, 7); ctx.fill();
+      }
+    }
+    // lado da noite
+    const sh = ctx.createRadialGradient(x - R * 0.5, y - R * 0.5, R * 0.6, x - R * 0.2, y - R * 0.2, R * 1.6);
+    sh.addColorStop(0, "rgba(0,0,0,0)");
+    sh.addColorStop(1, "rgba(0,0,20,0.55)");
+    ctx.fillStyle = sh;
+    ctx.fillRect(x - R, y - R, R * 2, R * 2);
+    ctx.restore();
+    if (k === "saturn") planetRing(x, y, R, 0, Math.PI);
+  }
+
+  // placa de dica com seta apontando para o atalho
+  function drawSign(r, side) {
+    const x = r.x + r.F * side * 1.3 * ROAD_W, s = r.F * 0.4 * ROAD_W, y = r.y;
+    if (s < 3) return;
+    ctx.fillStyle = "#8a5a2b";
+    ctx.fillRect(x - s * 0.05, y - s * 1.1, s * 0.1, s * 1.1);
+    ctx.fillStyle = "#ffd23f";
+    roundRect(x - s * 0.5, y - s * 1.5, s, s * 0.5, s * 0.08);
+    ctx.fill();
+    ctx.lineWidth = Math.max(1, s * 0.05);
+    ctx.strokeStyle = "#8a5a2b";
+    ctx.stroke();
+    const cy = y - s * 1.25;
+    ctx.fillStyle = "#ff4fa0";
+    ctx.fillRect(Math.min(x - side * s * 0.32, x + side * s * 0.12), cy - s * 0.06, s * 0.44, s * 0.12);
+    quad(x + side * s * 0.4, cy, x + side * s * 0.1, cy - s * 0.18, x + side * s * 0.1, cy + s * 0.18, x + side * s * 0.4, cy);
+    const bounce = Math.abs(Math.sin(nowMs * 0.008)) * s * 0.2;
+    drawEmo("✨", x, y - s * 1.5 - bounce, s * 0.5);
+  }
+
+  // entrada do lugar secreto, um pouco fora da pista
+  function drawEntrance(r, sec) {
+    const x = r.x + r.F * sec.x * ROAD_W, s = r.F * ROAD_W, y = r.y;
+    if (s < 4) return;
+    ctx.fillStyle = "rgba(255,240,150," + (0.22 + 0.15 * Math.sin(nowMs * 0.008)) + ")";
+    ctx.beginPath(); ctx.ellipse(x, y - s * 0.3, s * 0.6, s * 0.5, 0, 0, 7); ctx.fill();
+    if (sec.kind === "space") {
+      ctx.fillStyle = "#7d7d8c";
+      ctx.fillRect(x - s * 0.35, y - s * 0.08, s * 0.7, s * 0.08);
+      ctx.save();
+      ctx.translate(x, y - s * 0.5);
+      ctx.rotate(-Math.PI / 4);
+      ctx.drawImage(emo("🚀", s * 0.9), -s * 0.45, -s * 0.45, s * 0.9, s * 0.9);
+      ctx.restore();
+      ctx.fillStyle = Math.floor(nowMs / 300) % 2 ? "#ff3b3b" : "#ffe14d";
+      circle(x - s * 0.3, y - s * 0.12, s * 0.03);
+      circle(x + s * 0.3, y - s * 0.12, s * 0.03);
+    } else if (sec.kind === "sea") {
+      ctx.fillStyle = "#8a8a99";
+      ctx.beginPath(); ctx.ellipse(x, y, s * 0.42, s * 0.52, 0, Math.PI, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#0b4f9e";
+      ctx.beginPath(); ctx.ellipse(x, y, s * 0.31, s * 0.41, 0, Math.PI, Math.PI * 2); ctx.fill();
+      drawEmo("🐠", x + Math.sin(nowMs * 0.003) * s * 0.12, y - s * 0.12, s * 0.18);
+      drawEmo("🌊", x, y - s * 0.48, s * 0.3);
+    } else {
+      const cols = ["#ff5b4d", "#ff9f43", "#ffd23f", "#5cd97a", "#4db5ff", "#a66cff"];
+      ctx.lineWidth = s * 0.06;
+      cols.forEach((c, k) => {
+        ctx.strokeStyle = c;
+        ctx.beginPath(); ctx.arc(x, y, s * (0.5 - k * 0.06), Math.PI, Math.PI * 2); ctx.stroke();
+      });
+      drawEmo("☁️", x - s * 0.45, y + s * 0.08, s * 0.35);
+      drawEmo("☁️", x + s * 0.45, y + s * 0.08, s * 0.35);
+    }
+  }
+
+  function drawSecret() {
+    const S = secret, p = S.t / S.dur, u = Math.min(W, H), t = S.t;
+    if (S.kind === "space") drawSecretSpace(S, p, u, t);
+    else if (S.kind === "sea") drawSecretSea(S, p, u, t);
+    else drawSecretSky(S, p, u, t);
+    if (t < 150) {
+      ctx.globalAlpha = clamp((150 - t) / 30, 0, 1);
+      outlined(SECRET_TXT[S.kind], W / 2, H * 0.24, clamp(u * 0.07, 18, 42), "#ffe14d", "#2b1d4a");
+      ctx.globalAlpha = 1;
+    }
+    // clarão branco na entrada e na saída
+    const fade = Math.max(0, 1 - t / 25, 1 - (S.dur - t) / 25);
+    if (fade > 0) {
+      ctx.fillStyle = "rgba(255,255,255," + clamp(fade, 0, 1) + ")";
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawSecretSpace(S, p, u, t) {
+    const space = ease(clamp(p / 0.25, 0, 1)) * (1 - ease(clamp((p - 0.82) / 0.18, 0, 1)));
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#3fa9f5");
+    sky.addColorStop(1, "#d4f1ff");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = space;
+    const sp = ctx.createLinearGradient(0, 0, 0, H);
+    sp.addColorStop(0, "#02010a");
+    sp.addColorStop(1, "#1a0b3d");
+    ctx.fillStyle = sp;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffffff";
+    for (const st of S.stars) ctx.fillRect(st.x * W, ((st.y + t * 0.004 * st.s) % 1) * H, st.s, st.s * (1 + 5 * space));
+    // o Sol e os planetas lá de longe
+    drawSun(W * 0.82, H * 0.14, u * 0.07);
+    drawPlanet("saturn", W * 0.2, H * 0.2 + t * 0.03, u * 0.06);
+    drawPlanet("mars", W * 0.86, H * 0.42 + t * 0.04, u * 0.035);
+    drawPlanet("jupiter", W * 0.12, H * 0.5 + t * 0.02, u * 0.05);
+    ctx.globalAlpha = 1;
+    // a Lua passando
+    const qm = clamp((p - 0.3) / 0.45, 0, 1);
+    if (qm > 0 && qm < 1) drawPlanet("moon", lerp(W * 1.25, -W * 0.25, qm), H * 0.34, u * (0.1 + 0.08 * Math.sin(qm * Math.PI)));
+    // a Terra ficando pequenininha lá embaixo
+    const qe = ease(clamp((p - 0.05) / 0.6, 0, 1));
+    if (p < 0.86) drawPlanet("earth", lerp(W / 2, W * 0.22, qe), lerp(H + W * 0.9, H * 0.84, qe), lerp(W * 1.1, u * 0.11, qe));
+    const qc = clamp((p - 0.2) / 0.25, 0, 1);
+    if (qc > 0 && qc < 1) drawEmo("☄️", lerp(W * 1.1, -W * 0.1, qc), lerp(H * 0.1, H * 0.32, qc), u * 0.12);
+    const qa = clamp((p - 0.45) / 0.3, 0, 1);
+    if (qa > 0 && qa < 1) drawEmo("🧑‍🚀", lerp(-W * 0.1, W * 1.1, qa), H * 0.5 + Math.sin(t * 0.05) * 15, u * 0.13);
+    const qs = clamp((p - 0.6) / 0.22, 0, 1);
+    if (qs > 0 && qs < 1) drawEmo("🛰️", lerp(W * 1.1, -W * 0.1, qs), H * 0.24, u * 0.1);
+    // nuvens na subida e na descida
+    if (space < 0.98) {
+      ctx.globalAlpha = 1 - space;
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 7; i++) puff(((i * 0.37) % 1) * W, (((i * 0.17 + t * 0.02) % 1.2) - 0.1) * H, u * 0.07);
+      ctx.globalAlpha = 1;
+    }
+    // kart-foguete
+    const y = H * 0.68 + Math.sin(t * 0.08) * 6, w = u * 0.36;
+    ctx.fillStyle = "#ff6a00";
+    flame(W / 2, y - w * 0.06, w * 0.9 + Math.random() * w * 0.2, w * 0.22);
+    ctx.fillStyle = "#ffe14d";
+    flame(W / 2, y - w * 0.06, w * 0.5, w * 0.12);
+    drawKart(W / 2, y, w, player, 0);
+  }
+
+  function drawSecretSea(S, p, u, t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#2aa8e8");
+    g.addColorStop(0.5, "#0f5fa8");
+    g.addColorStop(1, "#062a5a");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(255,255,255,0.07)";
+    for (let i = 0; i < 6; i++) {
+      const x = W * (i / 5) + Math.sin(t * 0.01 + i) * 40;
+      quad(x - 20, 0, x + 30, 0, x + 140, H * 0.8, x - 60, H * 0.8);
+    }
+    const qw = clamp((p - 0.15) / 0.65, 0, 1);
+    if (qw > 0 && qw < 1) {
+      ctx.globalAlpha = 0.85;
+      drawEmo("🐳", lerp(-W * 0.3, W * 1.3, qw), H * 0.36, u * 0.42);
+      ctx.globalAlpha = 1;
+    }
+    // túnel de vidro
+    const cx = W / 2, cy = H * 0.42;
+    for (let i = 0; i < 9; i++) {
+      const z = (i / 9 + t * 0.01) % 1, sc = 0.04 + z * z * 1.7;
+      ctx.strokeStyle = "rgba(190,245,255," + z * 0.55 + ")";
+      ctx.lineWidth = 2 + sc * 10;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + sc * H * 0.15, W * 0.55 * sc, H * 0.42 * sc, 0, 0, 7);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(120,230,255,0.35)";
+    quad(cx - 4, cy, cx + 4, cy, W * 0.95, H, W * 0.05, H);
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    for (let i = 0; i < 6; i++) {
+      const z = (i / 6 + t * 0.02) % 1, z2 = Math.min(1, z + 0.07);
+      const y1 = cy + (H - cy) * z * z, y2 = cy + (H - cy) * z2 * z2;
+      quad(cx - (1 + z * z * W * 0.02), y1, cx + (1 + z * z * W * 0.02), y1, cx + (1 + z2 * z2 * W * 0.02), y2, cx - (1 + z2 * z2 * W * 0.02), y2);
+    }
+    // algas balançando
+    ctx.strokeStyle = "#2fbf71";
+    ctx.lineCap = "round";
+    ctx.lineWidth = 8;
+    for (let i = 0; i < 8; i++) {
+      const x = (i < 4 ? i * 0.06 : 0.76 + (i - 4) * 0.06) * W + 10, h = H * (0.15 + (i % 3) * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(x, H);
+      ctx.quadraticCurveTo(x + Math.sin(t * 0.05 + i) * 25, H - h * 0.5, x + Math.sin(t * 0.04 + i) * 15, H - h);
+      ctx.stroke();
+    }
+    ctx.lineCap = "butt";
+    drawEmo("🦀", W * 0.13 + Math.sin(t * 0.03) * 20, H, u * 0.1);
+    drawEmo("🐚", W * 0.88, H, u * 0.08);
+    // bichinhos nadando
+    for (const c of S.life) {
+      ctx.save();
+      ctx.translate(c.x * W, c.y * H + Math.sin(t * 0.05 + c.ph) * 8);
+      if (c.dir > 0) ctx.scale(-1, 1);
+      drawEmo(c.e, 0, (u * c.s) / 2, u * c.s);
+      ctx.restore();
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.7)";
+    ctx.lineWidth = 1.5;
+    for (const b of S.bubbles) {
+      ctx.beginPath();
+      ctx.arc(b.x + Math.sin(b.y * 0.05) * 4, b.y, b.r, 0, 7);
+      ctx.stroke();
+    }
+    // kart dentro de uma bolha
+    const y = H * 0.8 + Math.sin(t * 0.06) * 5, w = u * 0.34;
+    drawKart(W / 2, y, w, player, 0);
+    ctx.fillStyle = "rgba(200,240,255,0.15)";
+    circle(W / 2, y - w * 0.45, w * 0.78);
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(W / 2, y - w * 0.45, w * 0.78, 0, 7); ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.beginPath(); ctx.ellipse(W / 2 - w * 0.4, y - w * 0.85, w * 0.1, w * 0.18, 0.6, 0, 7); ctx.fill();
+  }
+
+  function drawSecretSky(S, p, u, t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#7fc8ff");
+    g.addColorStop(1, "#ffe3f3");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    drawSun(W * 0.82, H * 0.12, u * 0.06);
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    for (let i = 0; i < 8; i++) {
+      const z = (i / 8 + t * 0.006) % 1;
+      const side = i % 2 ? 1 : -1;
+      puff(W / 2 + side * (W * 0.1 + z * z * W * 0.7), H * 0.36 + z * z * H * 0.5, u * (0.02 + z * z * 0.16));
+    }
+    // escorregador de arco-íris
+    const cx = W / 2, cy = H * 0.36, cols = ["#ff5b4d", "#ff9f43", "#ffd23f", "#5cd97a", "#4db5ff", "#a66cff"];
+    cols.forEach((c, k) => {
+      const a = -1 + k / 3, b = a + 1 / 3;
+      ctx.fillStyle = c;
+      quad(cx + a * 4, cy, cx + b * 4, cy, cx + b * W * 0.62, H, cx + a * W * 0.62, H);
+    });
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    for (let i = 0; i < 6; i++) {
+      const z = (i / 6 + t * 0.02) % 1, z2 = Math.min(1, z + 0.05);
+      const y1 = cy + (H - cy) * z * z, y2 = cy + (H - cy) * z2 * z2;
+      for (const sd of [-1, 1]) {
+        const xa = cx + sd * W * 0.62 * z * z, xb = cx + sd * W * 0.62 * z2 * z2;
+        quad(xa - 2, y1, xa + 2, y1, xb + 3, y2, xb - 3, y2);
+      }
+    }
+    for (const c of S.life) {
+      ctx.save();
+      ctx.translate(c.x * W, c.y * H * 0.8 + Math.sin(t * 0.05 + c.ph) * 10);
+      if (c.dir > 0) ctx.scale(-1, 1);
+      drawEmo(c.e, 0, (u * c.s) / 2, u * c.s);
+      ctx.restore();
+    }
+    const y = H * 0.82 + Math.sin(t * 0.07) * 5, w = u * 0.34;
+    ctx.fillStyle = "#fff6b0";
+    for (let i = 0; i < 6; i++) sparkle(W / 2 + (Math.random() - 0.5) * w * 1.3, y - Math.random() * w * 0.9, w * 0.05, t * 0.1 + i);
+    drawKart(W / 2, y, w, player, 0);
+  }
+
+  /* ---------------- Viagem Espacial: viagem entre planetas ---------- */
+  let travel = null;
+  function beginGP() {
+    gp = { race: 0, list: mode === "space" ? SPACE_LIST : CUP_LIST, pts: CHARS.map(() => 0) };
+    if (mode === "space") startTravel();
+    else startRace(gp.list[0]);
+  }
+  function startTravel() {
+    ensureAudio();
+    musicStop();
+    engineOff();
+    CC = CCS[save.cc] || CCS[0];
+    const to = TRACKS[gp.list[gp.race]], from = gp.race > 0 ? TRACKS[gp.list[gp.race - 1]] : null;
+    buildTrack(gp.list[gp.race]);
+    resetRace();
+    for (const r of racers) r.boostT = 1e9;
+    travel = { from, to, t: 0, dur: 420, stars: [] };
+    for (let i = 0; i < 140; i++) travel.stars.push({ a: Math.random() * Math.PI * 2, r: Math.random() * Math.max(W, H) * 0.7, v: 0.5 + Math.random() });
+    state = "travel";
+    show(null);
+    musicPlay(3, 1.1);
+    sfx.rocket();
+  }
+  function updateTravel(dt) {
+    travel.t += dt;
+    const M = Math.max(W, H) * 0.75;
+    for (const st of travel.stars) {
+      st.r += (1 + st.r * 0.03) * st.v * dt;
+      if (st.r > M) { st.r = Math.random() * 30; st.a = Math.random() * Math.PI * 2; }
+    }
+    if (travel.t >= travel.dur) endTravel();
+  }
+  function endTravel() {
+    travel = null;
+    startRace(gp.list[gp.race]);
+  }
+  function drawTravel() {
+    const tr = travel, p = tr.t / tr.dur, u = Math.min(W, H), t = tr.t, cy = H * 0.45;
+    const bg = ctx.createRadialGradient(W / 2, cy, 10, W / 2, cy, Math.max(W, H) * 0.8);
+    bg.addColorStop(0, "#2a1660");
+    bg.addColorStop(1, "#03020c");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    // estrelas passando rapidinho (velocidade da luz!)
+    ctx.strokeStyle = "#ffffff";
+    const M = Math.max(W, H) * 0.75;
+    for (const st of tr.stars) {
+      ctx.globalAlpha = Math.min(1, st.r / 200);
+      ctx.lineWidth = 1 + (st.r / M) * 2;
+      const c = Math.cos(st.a), si = Math.sin(st.a);
+      ctx.beginPath();
+      ctx.moveTo(W / 2 + c * st.r * 0.88, cy + si * st.r * 0.88);
+      ctx.lineTo(W / 2 + c * st.r, cy + si * st.r);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    drawSun(W * 0.15, H * 0.15, u * 0.09);
+    drawPlanet("jupiter", W * 0.87, H * 0.62 + t * 0.03, u * 0.05);
+    if (tr.from) {
+      const q = ease(clamp(p / 0.55, 0, 1));
+      drawPlanet(tr.from.planet, lerp(W * 0.5, W * 0.06, q), lerp(H * 1.05, H * 0.9, q), lerp(u * 0.55, u * 0.04, q));
+    }
+    const q2 = ease(clamp((p - 0.2) / 0.8, 0, 1));
+    drawPlanet(tr.to.planet, lerp(W * 0.82, W * 0.5, q2), lerp(H * 0.3, H * 0.33, q2), lerp(u * 0.03, u * 0.26, q2));
+    // todo mundo voando junto
+    const spots = [[0.2, 0.62, 0.14], [0.8, 0.6, 0.14], [0.32, 0.53, 0.1], [0.68, 0.52, 0.1]];
+    karts.slice(0, 4).forEach((k, i) => {
+      const [sx, sy, sw] = spots[i];
+      drawKart(W * sx, H * sy + Math.sin(t * 0.06 + i) * 5, u * sw, k, 0);
+    });
+    drawKart(W / 2, H * 0.8 + Math.sin(t * 0.07) * 6, u * 0.3, player, 0);
+    outlined(tr.from ? "🚀 Viajando pelo espaço..." : "🚀 Decolando!", W / 2, H * 0.06, clamp(u * 0.055, 15, 30), "#ffffff", "#2b1d4a");
+    const label = "Próxima parada: " + tr.to.name.toUpperCase() + " " + tr.to.icon;
+    let ns = clamp(u * 0.08, 20, 48) * (1 + Math.sin(t * 0.08) * 0.04);
+    ctx.font = "bold " + Math.round(ns) + "px " + FONT;
+    const lw = ctx.measureText(label).width;
+    if (lw > W * 0.92) ns *= (W * 0.92) / lw;
+    outlined(label, W / 2, H * 0.93, ns, "#ffe14d", "#2b1d4a");
+    if (t > 120) {
+      ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.1);
+      outlined("Toque para continuar ▶", W / 2, H * 0.12, clamp(u * 0.04, 13, 20), "#ffffff", "#2b1d4a");
+      ctx.globalAlpha = 1;
+    }
+    const fade = clamp((t - (tr.dur - 25)) / 25, 0, 1);
+    if (fade > 0) {
+      ctx.fillStyle = "rgba(255,255,255," + fade + ")";
+      ctx.fillRect(0, 0, W, H);
+    }
   }
 
   /* ---------------- Festa do pódio (1º, 2º e 3º lugar) ------------- */
@@ -1926,9 +2526,10 @@
 
   $("cup-btn").addEventListener("click", () => { mode = "cup"; show("setup"); });
   $("free-btn").addEventListener("click", () => { mode = "free"; show("setup"); });
+  $("space-btn").addEventListener("click", () => { mode = "space"; show("setup"); });
   $("setup-go").addEventListener("click", () => {
-    if (mode === "cup") { gp = { race: 0, pts: CHARS.map(() => 0) }; startRace(0); }
-    else show("track");
+    if (mode === "free") show("track");
+    else beginGP();
   });
   document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show(b.dataset.go)));
   $("resume-btn").addEventListener("click", resume);
@@ -1957,6 +2558,7 @@
     lastT = t;
     nowMs = t;
     try {
+      if (state === "travel") { updateTravel(dt); if (travel) drawTravel(); syncButtons(); requestAnimationFrame(loop); return; }
       if (state === "party") { updateParty(dt); updateFx(dt); drawParty(); syncButtons(); requestAnimationFrame(loop); return; }
       if (state === "count") updateCount(dt);
       else if (state !== "pause") update(dt);
@@ -1977,6 +2579,13 @@
     get racers() { return racers; },
     finishLap() { player.z = lineZ + player.lap * trackLen - 300; },
     give(it) { player.item = it; player.itemN = 1; },
+    toSecret(dist) {
+      const i = segments.findIndex((sg) => sg.secret);
+      if (i < 0) return null;
+      player.z = Math.floor((player.z - lineZ) / trackLen) * trackLen + lineZ + (i - START) * SEG_L - dist;
+      return segments[i].secret;
+    },
+    get secret() { return secret && secret.kind; },
   };
 
   applyMute();
