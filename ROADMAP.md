@@ -68,6 +68,19 @@ caindo do céu com turbo. Os rivais nunca usam os atalhos.
 - Na Lua dá para ver a Terra no céu; em Saturno, o planeta gigante com anéis.
 - Troféu próprio: "Campeã do Espaço", guardado na estante da tela inicial.
 
+## ✅ Sprint 1.3 — Dinossauro, bombas, festas e bichinhos de costas (entregue)
+
+| Pedido | Como ficou |
+|---|---|
+| **Fase do dinossauro** | Nova pista 🦖 **Vale dos Dinossauros** (selva, vulcão, ovos, ossos). Na Corrida Livre e como **corrida final da Copa** (a Copa agora tem 5 corridas). |
+| Dino corre atrás de quem fica para trás e come | Depois de ~12 s o T-Rex ruge e persegue **o último colocado**. Se alcança: "NHAC!", o kart some ~2 s na barriga (os outros passam = perde posições) e volta com "Ufa!". Depois o dino descansa um pouco. |
+| Ela tem que fugir | Quando o dino vem atrás da Lara: bordas da tela ficam vermelhas, aparece "🦖 CORRE!", passos pesados que tremem a tela. Dá para escapar com turbos, mini-turbo e cogumelos; com a 🌟 estrela o dino é que foge. Fácil: o dino é mais lento. |
+| **Bombas** em alguns trechos | 3 trechos com bombas 💣 (pavio aceso) na pista do dino. Bateu: BUM! 💥, o kart voa girando e perde 2 moedas. Os rivais tentam desviar. |
+| **Festa grande no 1º lugar** | Mais fogos, arco-íris gigante atrás do pódio, anel de brilhos girando em volta dela, mais confete e balões. |
+| Pódio 2º/3º | A festa de antes (pódio, fogos, voz). |
+| **Mini festinha fora do pódio** | ~4 s com os 3 primeiros no pódio e "vamos de novo! 💪"; passa sozinha ou com um toque. |
+| **Bichinhos olhando para trás** | Agora são vistos **de costas**: cabecinha com orelhas de cada um (maria-chiquinha da Lara, orelhas do gato, chifre e crina do unicórnio...). O rosto aparece no adesivo do kart e na festa, quando viram para a câmera. |
+
 ## 🔜 Sprint 2 — "Teste com a Lara" (próxima)
 
 A Sprint 2 depende do **teste com a Lara**. Antes de programar mais, o ideal é ela

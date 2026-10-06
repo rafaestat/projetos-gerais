@@ -43,22 +43,22 @@
     { name: "Marrom", body: "#b07a4f", dark: "#7f5434" },
   ];
   const CHARS = [
-    { e: "👧", name: "Lara", color: 0, fem: true },
-    { e: "🐱", name: "Gatinha", color: 6, fem: true },
-    { e: "🐶", name: "Totó", color: 2, fem: false },
-    { e: "🦄", name: "Unicórnio", color: 1, fem: false },
-    { e: "🐼", name: "Panda", color: 7, fem: false },
-    { e: "🐸", name: "Sapinho", color: 3, fem: false },
-    { e: "🐰", name: "Coelha", color: 4, fem: true },
-    { e: "🦊", name: "Raposa", color: 5, fem: true },
-    { e: "🐢", name: "Tartaruga", color: 3, fem: true },
-    { e: "🐻", name: "Ursinho", color: 8, fem: false },
+    { e: "👧", name: "Lara", color: 0, fem: true, back: { type: "girl", c: "#5a3a22" } },
+    { e: "🐱", name: "Gatinha", color: 6, fem: true, back: { type: "cat", c: "#ffc94d", in: "#ff9fb5" } },
+    { e: "🐶", name: "Totó", color: 2, fem: false, back: { type: "dog", c: "#f3dcb8", ear: "#a0703c" } },
+    { e: "🦄", name: "Unicórnio", color: 1, fem: false, back: { type: "unicorn", c: "#ffffff" } },
+    { e: "🐼", name: "Panda", color: 7, fem: false, back: { type: "round", c: "#ffffff", ear: "#222228" } },
+    { e: "🐸", name: "Sapinho", color: 3, fem: false, back: { type: "frog", c: "#5cd97a" } },
+    { e: "🐰", name: "Coelha", color: 4, fem: true, back: { type: "bunny", c: "#f4f4f8", in: "#ffb3d9" } },
+    { e: "🦊", name: "Raposa", color: 5, fem: true, back: { type: "fox", c: "#ff8a3d", in: "#3a2a20" } },
+    { e: "🐢", name: "Tartaruga", color: 3, fem: true, back: { type: "turtle", c: "#8bd96a" } },
+    { e: "🐻", name: "Ursinho", color: 8, fem: false, back: { type: "round", c: "#b07a4f", ear: "#b07a4f", in: "#e0b48a" } },
   ].map((c, i) => ({ ...c, i }));
 
   const CCS = [
-    { id: "50", label: "🐢 Fácil", top: 54, skill: [0.84, 0.95], push: 0.003, aiItems: ["banana", "mush"], aiUse: 0.5 },
-    { id: "100", label: "🐇 Médio", top: 62, skill: [0.9, 1.0], push: 0.0042, aiItems: ["banana", "mush", "shell"], aiUse: 0.8 },
-    { id: "150", label: "🚀 Rápido", top: 70, skill: [0.94, 1.04], push: 0.0054, aiItems: ["banana", "mush", "shell", "star"], aiUse: 1 },
+    { id: "50", label: "🐢 Fácil", top: 54, skill: [0.84, 0.95], push: 0.003, aiItems: ["banana", "mush"], aiUse: 0.5, dino: 3 },
+    { id: "100", label: "🐇 Médio", top: 62, skill: [0.9, 1.0], push: 0.0042, aiItems: ["banana", "mush", "shell"], aiUse: 0.8, dino: 5 },
+    { id: "150", label: "🚀 Rápido", top: 70, skill: [0.94, 1.04], push: 0.0054, aiItems: ["banana", "mush", "shell", "star"], aiUse: 1, dino: 7 },
   ];
   let CC = CCS[save.cc] || CCS[0];
 
@@ -174,10 +174,25 @@
         [0, 40, 0, 0, 0], [20, 40, 20, 3.2, 500], [20, 40, 20, -1.6, -500], [0, 40, 0, 0, 0]],
       ramps: [0.4, 0.7],
     },
-  ];
-  const CUP_LIST = [0, 1, 2, 3], SPACE_LIST = [4, 5, 6, 7];
 
-  const SMALL_DECOR = ["🍄", "🌷", "🌼", "🦀", "🐚", "🏐", "🌺", "🍓", "🍬", "🍪", "🚩", "🧑‍🚀", "👽", "🤖", "💎", "❄️", "🧊", "🐑", "🐄"];
+    /* ----- Vale dos Dinossauros: fuja do T-Rex! ----- */
+    {
+      name: "Vale dos Dinossauros", icon: "🦖", song: 5, dino: true,
+      th: {
+        sky: ["#5fb8e8", "#e3f6d0"], sun: "#fff3b0", cloud: "#ffffff", far: "#4f7d3f", near: "#3e6e33", peaks: true, volcano: true,
+        grass: ["#4caf50", "#5abd5d"], rumble: ["#8d5524", "#ffd23f"], road: ["#8a6a4a", "#94714f"], lane: "#ffe9b0",
+        dust: "rgba(140,100,60,0.7)",
+        decor: ["🌴", "🌿", "🦕", "🥚", "🌴", "🍄", "🌳", "🦴", "🌿"], marks: ["🌋", "🦕", "🦕", "🏕️"],
+      },
+      layout: [[0, 40, 0, 0, 0], [20, 40, 20, 2.4, 0], [15, 30, 15, 0, 800], [15, 30, 15, -2.6, -800], [0, 30, 0, 0, 0],
+        [20, 50, 20, 3.2, 0], [10, 25, 10, -1.8, 500], [10, 25, 10, 1.8, -500], [0, 40, 0, 0, 0], [25, 45, 25, -3, 0], [0, 30, 0, 0, 0]],
+      ramps: [0.32, 0.72],
+      bombs: [0.2, 0.5, 0.86],
+    },
+  ];
+  const CUP_LIST = [0, 1, 2, 3, 8], SPACE_LIST = [4, 5, 6, 7];
+
+  const SMALL_DECOR = ["🍄", "🌷", "🌼", "🦀", "🐚", "🏐", "🌺", "🍓", "🍬", "🍪", "🚩", "🧑‍🚀", "👽", "🤖", "💎", "❄️", "🧊", "🐑", "🐄", "🥚", "🦴", "🌿"];
 
   /* ---------------- Tela e projeção --------------------------------- */
   const SEG_L = 200, DRAW = 72, CAM_DIST = 1100, LAPS = 3, NR = 8, START = 12;
@@ -297,6 +312,9 @@
     count: (go) => tone(go ? 880 : 440, go ? 0.5 : 0.18, "square", 0.16),
     win: () => arp([72, 76, 79, 84, 79, 84, 88], 0.13, 0.25, "triangle", 0.2),
     blip: () => tone(700, 0.08, "square", 0.1),
+    roar: () => { if (AC) noiseAt(AC.currentTime, 1.0, 0.22, 150); tone(150, 0.9, "sawtooth", 0.13, 0, 60); tone(230, 0.7, "square", 0.05, 0.05, 90); },
+    chomp: () => { tone(320, 0.09, "square", 0.2, 0, 90); tone(320, 0.09, "square", 0.2, 0.16, 90); },
+    kaboom: () => { if (AC) noiseAt(AC.currentTime, 0.7, 0.35, 60); tone(130, 0.6, "sine", 0.28, 0, 35); },
     chime: () => arp([88, 91, 95, 100], 0.06, 0.14, "sine", 0.12),
     secret: () => arp([84, 88, 91, 96, 100, 103], 0.06, 0.16, "triangle", 0.13),
     rocket: () => { if (AC) noiseAt(AC.currentTime, 1.8, 0.2, 120); tone(70, 1.6, "sawtooth", 0.08, 0, 420); },
@@ -321,6 +339,10 @@
     { bpm: 140, wave: "square", vol: 0.05,
       lead: [72, 76, 79, 84, 0, 79, 84, 0, 88, 0, 86, 84, 79, 0, 0, 0, 77, 81, 84, 89, 0, 84, 89, 0, 91, 0, 89, 88, 84, 0, 0, 0],
       bass: [48, 0, 55, 0, 48, 0, 55, 0, 52, 0, 55, 0, 48, 0, 55, 0, 53, 0, 57, 0, 53, 0, 57, 0, 55, 0, 59, 0, 48, 0, 55, 0] },
+    // selva dos dinossauros
+    { bpm: 128, wave: "triangle", vol: 0.09,
+      lead: [64, 67, 69, 0, 72, 69, 67, 0, 64, 67, 69, 72, 74, 0, 72, 0, 76, 74, 72, 0, 69, 67, 64, 0, 62, 64, 67, 69, 64, 0, 0, 0],
+      bass: [40, 0, 40, 47, 0, 40, 45, 0, 40, 0, 40, 47, 0, 43, 45, 0, 36, 0, 36, 43, 0, 36, 41, 0, 38, 0, 38, 45, 0, 43, 40, 0] },
   ];
   const music = { on: false, paused: false, song: 0, step: 0, next: 0, tempo: 1, timer: 0 };
 
@@ -398,7 +420,7 @@
   }
 
   /* ---------------- Construção da pista ----------------------------- */
-  let T = TRACKS[0], trackIdx = 0, segments = [], N = 1, trackLen = 1, boxSegs = [];
+  let T = TRACKS[0], trackIdx = 0, segments = [], N = 1, trackLen = 1, boxSegs = [], bombSegs = [];
   const idxOf = (z) => ((Math.floor(z / SEG_L) % N) + N) % N;
   const modL = (z) => ((z % trackLen) + trackLen) % trackLen;
   const wrapS = (d) => (((d % trackLen) + trackLen * 1.5) % trackLen) - trackLen / 2;
@@ -475,6 +497,18 @@
         if (!s.boxes && !s.coin) s.coin = { off: 0, taken: false, air: true };
       }
     }
+    // trechos com bombas 💣
+    bombSegs = [];
+    for (const f of T.bombs || []) {
+      let i = Math.floor(f * N) % N;
+      for (let n = 0; n < 80 && !free(i); n++) i = (i + 1) % N;
+      [[-0.55, 0.55], [0], [-0.75, 0.15, 0.85]].forEach((pat, m) => {
+        const sg = segments[(i + m * 7) % N];
+        if (sg.boxes || sg.ramp) return;
+        sg.bombs = pat.map((off) => ({ off, t: 0, boom: 0 }));
+        bombSegs.push(sg);
+      });
+    }
     // atalho secreto, com dicas: placa com seta + trilha de estrelinhas até a entrada
     if (T.secret) {
       let i = Math.floor(T.secret.at * N) % N;
@@ -520,7 +554,7 @@
       item: null, itemN: 0, roulT: 0, useT: 0,
       boostT: 0, starT: 0, spinT: 0, smallT: 0, bumpT: 0,
       jumpH: 0, jumpV: 0, trick: false, trickA: 0,
-      driftT: 0, driftLvl: 0, driftDir: 0, off: false,
+      driftT: 0, driftLvl: 0, driftDir: 0, off: false, eatenT: 0,
     };
   }
 
@@ -539,10 +573,12 @@
     confetti.length = 0;
     targetNX = player.x;
     secret = null;
+    dino = T.dino ? { z: Math.min(...racers.map((r) => r.z)) - 3000, x: 0, speed: 0, mode: "wait", t: 720, target: null, anim: 0, step: 0, stepT: 0 } : null;
     finishCount = 0; raceT = 0; shake = 0; flash = 0; msgT = 0; lastRank = NR; rocketOK = false;
     for (const s of segments) {
       if (s.coin) s.coin.taken = false;
       if (s.boxes) for (const b of s.boxes) b.t = 0;
+      if (s.bombs) for (const b of s.bombs) { b.t = 0; b.boom = 0; }
     }
   }
 
@@ -587,6 +623,76 @@
     if (r.itemN <= 0) r.item = null;
   }
 
+  function blast(r) {
+    const me = r.isPlayer && state === "race";
+    if (state === "race" && Math.abs(wrapS(r.z - player.z)) < 3000) sfx.kaboom();
+    if (r.starT > 0) return;
+    r.jumpH = 1; r.jumpV = 11; r.trick = false; r.trickA = 0;
+    r.spinT = 70; r.speed *= 0.3; r.driftT = 0; r.driftLvl = 0;
+    if (me) { shake = 16; flash = 8; r.coins -= Math.min(r.coins, 2); msg("BUM! 💥", "#ff8a3d", 60); }
+  }
+
+  /* ---------------- O dinossauro --------------------------------------
+     Corre atrás de quem está ficando para trás. Quando alcança, come:
+     o kart some um pouquinho (os outros passam) e depois volta. */
+  let dino = null;
+  function updateDino(dt) {
+    const D = dino;
+    if (D.anim > 0) D.anim -= dt;
+    const alive = racers.filter((r) => !r.finished && r.eatenT <= 0 && !(r === player && secret));
+    const last = alive.length ? alive.reduce((a, b) => (b.z < a.z ? b : a)) : null;
+    if (D.mode === "wait" || D.mode === "rest") {
+      D.t -= dt;
+      if (last) D.speed = clamp(last.speed * 0.9 + (last.z - (D.mode === "wait" ? 3500 : 5000) - D.z) * 0.02, 0, 120);
+      if (D.t <= 0 && last) {
+        D.mode = "chase";
+        if (state === "race") {
+          sfx.roar();
+          if (last === player) msg("🦖 O DINOSSAURO VEM AÍ! CORRE!", "#ff5b4d", 90);
+        }
+      }
+    } else if (D.mode === "chase") {
+      if (!last) { D.mode = "rest"; D.t = 200; }
+      else {
+        D.target = last;
+        const gap = last.z - D.z;
+        D.speed = gap > 3500 ? last.speed * 1.3 + 10 : Math.max(last.speed + CC.dino, 25);
+        D.x += (last.x - D.x) * Math.min(1, 0.04 * dt);
+        if (gap < 200 && last.jumpH < 150) {
+          if (last.starT > 0) {
+            // com a estrela, o dinossauro é que foge!
+            D.mode = "rest"; D.t = 300; D.z -= 2000;
+            if (last.isPlayer && state === "race") msg("O dino fugiu da estrela! 🌟", "#ffe14d", 70);
+          } else eatRacer(last);
+        }
+      }
+    } else if (D.mode === "eat") {
+      D.t -= dt;
+      D.speed = 0;
+      if (D.t <= 0) { D.mode = "rest"; D.t = 420; D.z -= 2500; }
+    }
+    D.z += D.speed * dt;
+    D.step += D.speed * dt;
+    // passos pesados quando ele vem atrás da Lara
+    const g = player.z - D.z;
+    if (state === "race" && D.mode === "chase" && D.target === player && g > 0 && g < 3500) {
+      D.stepT -= dt;
+      if (D.stepT <= 0) {
+        D.stepT = 26;
+        tone(65, 0.14, "sine", 0.3 * (1 - g / 3500));
+        if (g < 1600) shake = Math.max(shake, 3);
+      }
+    }
+  }
+  function eatRacer(r) {
+    dino.mode = "eat"; dino.t = 110; dino.anim = 40;
+    r.eatenT = 110; r.speed = 0; r.item = null; r.roulT = 0; r.boostT = 0; r.driftT = 0; r.driftLvl = 0;
+    if (state !== "race") return;
+    sfx.chomp();
+    if (r.isPlayer) { shake = 12; r.coins -= Math.min(r.coins, 2); }
+    else msg("🦖 NHAC! Comeu " + (r.ch.fem ? "a " : "o ") + r.name + "!", "#ff9f43", 70);
+  }
+
   function hit(o) {
     if (o.starT > 0) return;
     o.spinT = 70;
@@ -622,10 +728,26 @@
       const d = wrapS(b.z - k.z);
       if (d > 0 && d < 1100 && Math.abs(b.x - goal) < 0.36) goal = b.x > 0 ? b.x - 0.55 : b.x + 0.55;
     }
+    for (let q = 1; q < 8; q++) {
+      const sg = segments[(i0 + q) % N];
+      if (sg.bombs) for (const b of sg.bombs) if (b.t <= 0 && Math.abs(b.off - goal) < 0.3) goal = b.off > 0 ? b.off - 0.5 : b.off + 0.5;
+    }
     k.steerX = clamp(goal, -0.85, 0.85);
   }
 
   function physics(r, dt) {
+    if (r.eatenT > 0) {
+      // dentro da barriga do dinossauro: parado, e os outros passam
+      r.eatenT -= dt;
+      r.speed = 0;
+      if (r.eatenT <= 0) {
+        r.eatenT = 0;
+        r.spinT = 30;
+        r.x = clamp(r.x, -0.8, 0.8);
+        if (r.isPlayer && state === "race") { msg("Ufa! Escapei! 😅", "#ffffff", 70); flash = 10; sfx.boost(); }
+      }
+      return;
+    }
     const seg = segments[idxOf(r.z)];
     const control = r.isPlayer && state === "race";
     if (r.spinT <= 0) r.x += (r.steerX - r.x) * Math.min(1, (control ? 0.16 : 0.05) * dt) * (r.jumpH > 0 ? 0.5 : 1);
@@ -700,6 +822,7 @@
   }
 
   function pickups(r) {
+    if (r.eatenT > 0) return;
     const i0 = idxOf(r.z);
     const me = r.isPlayer && state === "race";
     for (let q = 0; q < 2; q++) {
@@ -715,6 +838,14 @@
           b.t = 200;
           if (!r.item && r.roulT <= 0) r.roulT = r.isPlayer ? 75 : 40;
           if (me) sfx.box();
+        }
+      }
+      if (s.bombs && r.jumpH < 60) {
+        for (const b of s.bombs) {
+          if (b.t > 0 || Math.abs(b.off - r.x) > 0.22) continue;
+          b.t = 360;
+          b.boom = 40;
+          blast(r);
         }
       }
       if (me && s.sign && s.signLap !== r.lap) {
@@ -760,7 +891,7 @@
       b.age += dt;
       for (const o of racers) {
         if (o === b.owner && b.age < 40) continue;
-        if (o === player && secret) continue;
+        if ((o === player && secret) || o.eatenT > 0) continue;
         if (Math.abs(wrapS(o.z - b.z)) < 120 && Math.abs(o.x - b.x) < 0.24 && o.jumpH < 60) {
           hit(o);
           b.dead = true;
@@ -782,7 +913,7 @@
       }
       for (const o of racers) {
         if (o === s.owner && s.life > 290) continue;
-        if (o === player && secret) continue;
+        if ((o === player && secret) || o.eatenT > 0) continue;
         if (Math.abs(wrapS(o.z - s.z)) < 160 && Math.abs(o.x - s.x) < 0.28 && o.jumpH < 150) {
           hit(o);
           s.life = 0;
@@ -800,6 +931,7 @@
     const P = player;
     for (const k of karts) {
       if (secret) break;
+      if (k.eatenT > 0 || P.eatenT > 0) continue;
       if (Math.abs(wrapS(k.z - P.z)) > 230 || Math.abs(k.x - P.x) > 0.3 || Math.abs(k.jumpH - P.jumpH) > 80) continue;
       if (P.starT > 0 && k.starT <= 0) { if (k.spinT <= 0) { hit(k); if (state === "race") sfx.bump(); } continue; }
       if (k.starT > 0 && P.starT <= 0) { if (P.spinT <= 0) hit(P); continue; }
@@ -846,6 +978,8 @@
     updateShells(dt);
     bumps(dt);
     for (const s of boxSegs) for (const b of s.boxes) if (b.t > 0) b.t -= dt;
+    for (const s of bombSegs) for (const b of s.bombs) { if (b.t > 0) b.t -= dt; if (b.boom > 0) b.boom -= dt; }
+    if (dino && (state === "race" || state === "finish")) updateDino(dt);
 
     // voltas e chegada
     for (const r of racers) {
@@ -1041,7 +1175,8 @@
         clip: ref === player ? H + 10 : b.clip,
       });
     };
-    for (const r of racers) addObj(r === player ? CAM_DIST : CAM_DIST + wrapS(r.z - player.z), "kart", r, r.x);
+    for (const r of racers) if (r.eatenT <= 0) addObj(r === player ? CAM_DIST : CAM_DIST + wrapS(r.z - player.z), "kart", r, r.x);
+    if (dino) addObj(CAM_DIST + wrapS(dino.z - player.z), "dino", dino, dino.x);
     for (const b of bananas) addObj(CAM_DIST + wrapS(b.z - player.z), "banana", b, b.x);
     for (const s of shells) addObj(CAM_DIST + wrapS(s.z - player.z), "shell", s, s.x);
 
@@ -1133,6 +1268,13 @@
       if (seg.ramp) drawRamp(r, next);
       if (seg.boost) drawBoostPad(r, seg.boost.off);
       if (r.si === START) drawFinishBanner(r);
+      if (seg.bombs) {
+        for (const b of seg.bombs) {
+          const bx = r.x + r.F * b.off * ROAD_W, bs = r.F * 0.17 * ROAD_W;
+          if (b.t <= 0) drawBomb(bx, r.y, bs);
+          else if (b.boom > 0) drawEmo("💥", bx, r.y, bs * (1.6 + (40 - b.boom) * 0.06));
+        }
+      }
       if (seg.hint) {
         const sz = r.F * 0.12 * ROAD_W;
         ctx.globalAlpha = 0.6 + 0.4 * Math.sin(nowMs * 0.01 + r.si);
@@ -1158,6 +1300,16 @@
       if (o.kind === "kart") {
         const w = o.F * KW;
         drawKart(o.x, o.y, w, o.ref, w * 0.62 * (o.ref.jumpH / 100));
+      } else if (o.kind === "dino") {
+        const D = o.ref, sz = Math.min(o.F * 1.35 * KW, H * 0.7);
+        const bob = Math.abs(Math.sin(D.step * 0.004)) * sz * 0.06;
+        shadow(o.x, o.y, sz * 0.38);
+        ctx.save();
+        ctx.translate(o.x, o.y - bob);
+        if (D.anim > 0) ctx.scale(1 + Math.sin(D.anim * 0.5) * 0.08, 1 - Math.sin(D.anim * 0.5) * 0.08);
+        ctx.drawImage(emo("🦖", sz), -sz / 2, -sz, sz, sz);
+        ctx.restore();
+        if (D.anim > 0) drawEmo("💥", o.x - sz * 0.25, o.y - sz * 0.6, sz * 0.35);
       } else if (o.kind === "banana") {
         const s = o.F * 0.2 * ROAD_W;
         shadow(o.x, o.y, s * 0.4);
@@ -1267,6 +1419,94 @@
     ctx.restore();
   }
 
+  function drawBomb(x, y, s) {
+    if (s < 3) return;
+    shadow(x, y, s * 0.4);
+    const cy = y - s * 0.5;
+    ctx.fillStyle = "#2b2b3a";
+    circle(x, cy, s * 0.5);
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    circle(x - s * 0.17, cy - s * 0.17, s * 0.12);
+    ctx.fillStyle = "#777788";
+    ctx.fillRect(x - s * 0.12, cy - s * 0.62, s * 0.24, s * 0.16);
+    ctx.strokeStyle = "#c9a86a";
+    ctx.lineWidth = Math.max(1, s * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(x, cy - s * 0.6);
+    ctx.quadraticCurveTo(x + s * 0.1, cy - s * 0.9, x + s * 0.3, cy - s * 0.85);
+    ctx.stroke();
+    ctx.fillStyle = Math.floor(nowMs / 90) % 2 ? "#ffe14d" : "#ff6a00";
+    sparkle(x + s * 0.3, cy - s * 0.85, s * (0.16 + Math.random() * 0.08), nowMs * 0.02);
+    if (Math.floor(nowMs / 400) % 2) { ctx.fillStyle = "#ff3b3b"; circle(x + s * 0.18, cy + s * 0.1, s * 0.07); }
+  }
+
+  // cabecinha vista de costas (a gente vê os karts por trás!)
+  function drawDriverBack(r, w, h) {
+    const b = r.ch.back, R = w * 0.25, hy = -h * 1.18;
+    ctx.fillStyle = r.dark;
+    roundRect(-w * 0.24, -h * 1.0, w * 0.48, h * 0.4, w * 0.12);
+    ctx.fill();
+    const tri = (sd, col, k) => {
+      ctx.fillStyle = col;
+      quad(sd * R * 0.2 * k + sd * R * 0.15, hy - R * 0.8, sd * R * 0.98, hy - R * 0.25, sd * R * 0.82, hy - R * (0.6 + 0.75 * k), sd * R * 0.82, hy - R * (0.6 + 0.75 * k));
+    };
+    if (b.type === "cat" || b.type === "fox") {
+      for (const sd of [-1, 1]) {
+        tri(sd, b.c, 1);
+        ctx.fillStyle = b.in;
+        quad(sd * R * 0.5, hy - R * 0.8, sd * R * 0.82, hy - R * 0.55, sd * R * 0.8, hy - R * 1.25, sd * R * 0.8, hy - R * 1.25);
+      }
+    } else if (b.type === "bunny") {
+      for (const sd of [-1, 1]) {
+        ctx.fillStyle = b.c;
+        ctx.beginPath(); ctx.ellipse(sd * R * 0.42, hy - R * 1.35, R * 0.26, R * 0.75, sd * 0.15, 0, 7); ctx.fill();
+        ctx.fillStyle = b.in;
+        ctx.beginPath(); ctx.ellipse(sd * R * 0.42, hy - R * 1.35, R * 0.13, R * 0.55, sd * 0.15, 0, 7); ctx.fill();
+      }
+    } else if (b.type === "round") {
+      for (const sd of [-1, 1]) {
+        ctx.fillStyle = b.ear;
+        circle(sd * R * 0.75, hy - R * 0.72, R * 0.36);
+        if (b.in) { ctx.fillStyle = b.in; circle(sd * R * 0.75, hy - R * 0.72, R * 0.18); }
+      }
+    } else if (b.type === "frog") {
+      ctx.fillStyle = b.c;
+      for (const sd of [-1, 1]) circle(sd * R * 0.5, hy - R * 0.78, R * 0.4);
+    } else if (b.type === "unicorn") {
+      ctx.fillStyle = "#ffd23f";
+      quad(-R * 0.16, hy - R * 0.8, R * 0.16, hy - R * 0.8, 0, hy - R * 1.65, 0, hy - R * 1.65);
+      for (const sd of [-1, 1]) tri(sd, b.c, 0.6);
+    }
+    // cabeça
+    ctx.fillStyle = b.c;
+    circle(0, hy, b.type === "turtle" ? R * 0.85 : R);
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.beginPath(); ctx.ellipse(-R * 0.35, hy - R * 0.4, R * 0.25, R * 0.15, -0.5, 0, 7); ctx.fill();
+    if (b.type === "girl") {
+      // maria-chiquinha com lacinhos
+      for (const sd of [-1, 1]) {
+        ctx.fillStyle = b.c;
+        circle(sd * R * 1.05, hy + R * 0.2, R * 0.42);
+        ctx.fillStyle = "#ff5d8f";
+        circle(sd * R * 0.78, hy - R * 0.05, R * 0.17);
+      }
+      ctx.strokeStyle = "rgba(0,0,0,0.25)";
+      ctx.lineWidth = Math.max(1, R * 0.06);
+      ctx.beginPath(); ctx.moveTo(0, hy - R); ctx.lineTo(0, hy + R * 0.3); ctx.stroke();
+    } else if (b.type === "dog") {
+      ctx.fillStyle = b.ear;
+      for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * R * 0.92, hy + R * 0.1, R * 0.28, R * 0.6, -sd * 0.3, 0, 7); ctx.fill(); }
+    } else if (b.type === "unicorn") {
+      ["#ff9be0", "#a66cff", "#4db5ff"].forEach((c, k) => {
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.ellipse((k - 1) * R * 0.22, hy + R * 0.05, R * 0.2, R * 0.85, 0, 0, 7); ctx.fill();
+      });
+    } else if (b.type === "turtle") {
+      ctx.fillStyle = "rgba(0,0,0,0.12)";
+      circle(0, hy + R * 0.2, R * 0.5);
+    }
+  }
+
   function flame(cx, cy, len, wid) {
     ctx.beginPath();
     ctx.moveTo(cx - wid, cy);
@@ -1275,7 +1515,7 @@
     ctx.fill();
   }
 
-  function drawKart(x, y, w, r, lift) {
+  function drawKart(x, y, w, r, lift, front) {
     if (w < 3) return;
     if (r.smallT > 0) w *= 0.55;
     const h = w * 0.62;
@@ -1312,7 +1552,8 @@
     ctx.fill();
 
     // piloto (o corpo do kart cobre a parte de baixo: parece sentado)
-    drawEmo(r.e, 0, -h * 0.64, w * 0.62);
+    if (front) drawEmo(r.e, 0, -h * 0.64, w * 0.62); // virado para a câmera (festa)
+    else drawDriverBack(r, w, h);
 
     // pneus traseiros
     ctx.fillStyle = "#24242a";
@@ -1428,6 +1669,19 @@
       ctx.globalAlpha = 1;
     }
     hillLayer(th.far, Math.max(W * 0.55, 180), H * 0.05, 0.2, th.peaks);
+    if (th.volcano) {
+      const vx = W * 0.7, vw = W * 0.2, vh = H * 0.13;
+      ctx.fillStyle = "#6b4a3a";
+      quad(vx - vw, HOR + 2, vx - vw * 0.22, HOR - vh, vx + vw * 0.22, HOR - vh, vx + vw, HOR + 2);
+      ctx.fillStyle = "#ff6a00";
+      quad(vx - vw * 0.22, HOR - vh, vx + vw * 0.22, HOR - vh, vx + vw * 0.12, HOR - vh * 0.82, vx - vw * 0.12, HOR - vh * 0.82);
+      ctx.fillStyle = "rgba(120,120,130,0.5)";
+      for (let i = 0; i < 4; i++) {
+        const k = ((nowMs * 0.00015 + i / 4) % 1);
+        const ps = Math.min(vw, H * 0.5);
+        puff(vx + Math.sin(k * 6 + i) * ps * 0.2, HOR - vh - k * H * 0.2, ps * (0.06 + k * 0.08));
+      }
+    }
     if (th.sea) {
       ctx.fillStyle = th.sea;
       ctx.fillRect(-20, HOR - H * 0.03, W + 40, H * 0.03 + 3);
@@ -1522,7 +1776,25 @@
       outlined(String(n), W / 2, H * 0.33, H * 0.14 * p, "#fff", "#d63b6e");
       outlined(raceLabel, W / 2, H * 0.45, clamp(u * 0.055, 15, 30));
       if (n <= 2) outlined("Toque na tela: largada turbo! 🚀", W / 2, H * 0.51, clamp(u * 0.042, 13, 22), "#ffe14d");
+      if (T.dino) outlined("🦖 Fuja do dinossauro!", W / 2, H * 0.57, clamp(u * 0.04, 12, 22), "#ffffff");
     }
+
+    // dinossauro vindo atrás da Lara
+    if (dino && state === "race" && dino.mode === "chase" && dino.target === player && player.eatenT <= 0) {
+      const g = player.z - dino.z;
+      if (g > 0 && g < 4500) {
+        const k = 1 - g / 4500;
+        const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
+        vg.addColorStop(0, "rgba(255,40,40,0)");
+        vg.addColorStop(1, "rgba(255,40,40," + (0.5 * k * (0.75 + 0.25 * Math.sin(nowMs * 0.015))) + ")");
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, W, H);
+        const ds = u * (0.1 + 0.1 * k), cy = H * (W > H ? 0.42 : 0.62);
+        drawEmo("🦖", W / 2 - u * 0.2, cy + ds * 0.4 - Math.abs(Math.sin(nowMs * 0.012)) * 8, ds);
+        outlined("CORRE!", W / 2 + u * 0.06, cy, clamp(u * 0.08, 22, 44) * (1 + Math.sin(nowMs * 0.02) * 0.06), "#ffffff", "#d6362a");
+      }
+    }
+    if (player.eatenT > 0) drawChomp(u);
 
     // mensagens grandes
     if (msgT > 0 && msgText) {
@@ -1535,6 +1807,30 @@
       if (mw > W * 0.9) ms *= (W * 0.9) / mw;
       outlined(msgText, W / 2, H * 0.3, ms * sc, msgColor, "#2b1d4a");
       ctx.globalAlpha = 1;
+    }
+  }
+
+  // NHAC! A boca do dinossauro fecha, a Lara fica um pouquinho na barriga e sai
+  function drawChomp(u) {
+    const e = 110 - player.eatenT;
+    const c = e < 22 ? e / 22 : e > 92 ? Math.max(0, (110 - e) / 18) : 1;
+    const jaw = c * H * 0.5;
+    if (c >= 1) {
+      ctx.fillStyle = "#7a2a3a";
+      ctx.fillRect(0, 0, W, H);
+      drawEmo("🦖", W / 2, H * 0.5, u * 0.35);
+      outlined("NHAC!", W / 2, H * 0.3, clamp(u * 0.13, 32, 80), "#ffe14d", "#2b1d4a");
+      outlined("Na barriga do dinossauro...", W / 2, H * 0.62, clamp(u * 0.05, 15, 26), "#ffffff", "#2b1d4a");
+      return;
+    }
+    const n = 7, tw = W / n;
+    ctx.fillStyle = "#4caf50";
+    ctx.fillRect(0, 0, W, jaw);
+    ctx.fillRect(0, H - jaw, W, jaw);
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < n; i++) {
+      quad(i * tw + 4, jaw, (i + 1) * tw - 4, jaw, (i + 0.5) * tw, jaw + tw * 0.6, (i + 0.5) * tw, jaw + tw * 0.6);
+      quad(i * tw + 4, H - jaw, (i + 1) * tw - 4, H - jaw, (i + 0.5) * tw, H - jaw - tw * 0.6, (i + 0.5) * tw, H - jaw - tw * 0.6);
     }
   }
 
@@ -1561,7 +1857,7 @@
   function steerTo(cx) { targetNX = clamp(((cx / W) * 2 - 1) * 1.7, -1.35, 1.35); }
   function onPress() {
     if (state === "count" && countT <= 2.05) rocketOK = true;
-    if (state === "party" && party.t > 150) endParty();
+    if (state === "party" && party.t > (party.mini ? 40 : 150)) endParty();
     if (state === "travel" && travel.t > 120) endTravel();
   }
   canvas.addEventListener("touchstart", (e) => {
@@ -2282,10 +2578,14 @@
   const GLITTER = ["#ffffff", "#ffe14d", "#ff9be0", "#9be7ff", "#ffd23f", "#c8a2ff"];
 
   function afterRace() {
-    const p = player.place, me = player.ch;
-    if (p > 3) { showResults(); return; }
+    const p = player.place, me = player.ch, top = finalOrder().slice(0, 3);
+    if (p > 3) {
+      // fora do pódio: festinha rápida com os 3 primeiros
+      startParty({ mini: true, top, place: p, big: "🏁", title: "PÓDIO!", sub: me.name + " chegou em " + p + "º · vamos de novo! 💪", onDone: showResults });
+      return;
+    }
     startParty({
-      top: finalOrder().slice(0, 3), place: p, big: MEDALS[p - 1],
+      top, place: p, big: MEDALS[p - 1],
       title: p === 1 ? me.name.toUpperCase() + (me.fem ? " CAMPEÃ!" : " CAMPEÃO!") : p + "º LUGAR!",
       sub: p === 1 ? "Você ganhou a corrida! 🏁" : "Você subiu no pódio! 🎉",
       say: p === 1 ? "Parabéns, " + me.name + "! Você " + (me.fem ? "é a campeã!" : "é o campeão!")
@@ -2295,23 +2595,30 @@
   }
 
   function startParty(o) {
-    party = { ...o, t: 0, fx: [], glitter: [], balloons: [], nextBoom: 5 };
-    for (let i = 0; i < 80; i++) {
+    const mini = !!o.mini, grand = !mini && o.place === 1;
+    party = { ...o, mini, grand, t: 0, fx: [], glitter: [], balloons: [], nextBoom: 5 };
+    for (let i = 0; i < (mini ? 30 : grand ? 170 : 80); i++) {
       party.glitter.push({ x: Math.random() * W, y: Math.random() * H, vy: 0.4 + Math.random() * 1.3, s: 3 + Math.random() * 7, ph: Math.random() * 9, c: GLITTER[i % GLITTER.length] });
     }
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < (mini ? 5 : grand ? 22 : 12); i++) {
       party.balloons.push({ x: Math.random() * W, y: H + Math.random() * H, vy: 0.8 + Math.random() * 1.4, hue: Math.floor(Math.random() * 360), ph: Math.random() * 9, s: 0.7 + Math.random() * 0.6 });
     }
     for (const r of party.top) { r.spinT = 0; r.boostT = 0; r.driftT = 0; r.driftLvl = 0; r.smallT = 0; r.jumpH = 0; r.trickA = 0; }
-    player.starT = 1e9; // kart arco-íris brilhando
+    if (party.top.includes(player)) player.starT = 1e9; // kart arco-íris brilhando
     state = "party";
     show(null);
     engineOff();
     musicStop();
+    confetti.length = 0;
+    if (mini) {
+      sfx.lap();
+      musicPlay(4, 1.15);
+      spawnConfetti(60);
+      return;
+    }
     sfx.win();
     setTimeout(() => { if (state === "party") musicPlay(4, 1); }, 900);
-    confetti.length = 0;
-    spawnConfetti(160);
+    spawnConfetti(grand ? 320 : 160);
     try { if (navigator.vibrate) navigator.vibrate([90, 60, 90, 60, 250]); } catch (e) { /* ok */ }
     // voz comemorando com o nome dela
     try {
@@ -2350,7 +2657,12 @@
     const p = party;
     p.t += dt;
     p.nextBoom -= dt;
-    if (p.nextBoom <= 0) { boom(); if (Math.random() < 0.35) boom(); p.nextBoom = 16 + Math.random() * 28; }
+    if (p.nextBoom <= 0) {
+      boom();
+      if (Math.random() < (p.grand ? 0.7 : 0.35)) boom();
+      p.nextBoom = p.mini ? 35 + Math.random() * 30 : p.grand ? 7 + Math.random() * 14 : 16 + Math.random() * 28;
+    }
+    if (p.mini && p.t > 240) { endParty(); return; }
     for (let i = p.fx.length - 1; i >= 0; i--) {
       const f = p.fx[i];
       f.x += f.vx * dt; f.y += f.vy * dt;
@@ -2426,6 +2738,18 @@
 
     // pódio com os 3 primeiros
     const bw = Math.min(W * 0.28, 170, land ? H * 0.32 : 999), baseY = H * 0.9;
+    if (p.grand) {
+      // arco-íris gigante atrás do pódio
+      ctx.globalAlpha = 0.75;
+      ctx.lineWidth = bw * 0.16;
+      ["#ff5b4d", "#ff9f43", "#ffd23f", "#5cd97a", "#4db5ff", "#a66cff"].forEach((c, k) => {
+        ctx.strokeStyle = c;
+        ctx.beginPath();
+        ctx.arc(W / 2, baseY, bw * (1.9 - k * 0.16) + Math.sin(t * 0.05) * 4, Math.PI, Math.PI * 2);
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+    }
     const spots = [
       { place: 2, x: W / 2 - bw * 1.04, h: H * 0.15, c: "#e4ebf2", d: "#9fb0c2" },
       { place: 1, x: W / 2, h: H * 0.21, c: "#ffd23f", d: "#d9a400" },
@@ -2448,7 +2772,14 @@
         ctx.fillStyle = "rgba(255,240,150,0.25)";
         circle(sp.x, top - kw * 0.45 - jump, kw * 0.85);
       }
-      drawKart(sp.x, top, kw, r, jump);
+      drawKart(sp.x, top, kw, r, jump, true);
+      if (p.grand && me) {
+        ctx.fillStyle = "#ffe14d";
+        for (let i = 0; i < 12; i++) {
+          const a = t * 0.05 + (i / 12) * Math.PI * 2;
+          sparkle(sp.x + Math.cos(a) * kw * 0.95, top - kw * 0.45 - jump + Math.sin(a) * kw * 0.75, kw * (0.05 + 0.03 * Math.abs(Math.sin(t * 0.1 + i))), a);
+        }
+      }
       if (sp.place === 1) drawEmo("👑", sp.x, top - jump - kw * 0.98, kw * 0.42);
     }
 
@@ -2488,7 +2819,11 @@
     ctx.strokeText(p.title, W / 2, ty);
     ctx.fillStyle = grad;
     ctx.fillText(p.title, W / 2, ty);
-    outlined(p.sub, W / 2, ty + ts * 0.95, clamp(u * 0.05, 15, 28), "#fff6b0", "#2b1d4a");
+    let ss = clamp(u * 0.05, 15, 28);
+    ctx.font = "bold " + Math.round(ss) + "px " + FONT;
+    const sw = ctx.measureText(p.sub).width;
+    if (sw > W * 0.92) ss *= (W * 0.92) / sw;
+    outlined(p.sub, W / 2, ty + ts * 0.95, ss, "#fff6b0", "#2b1d4a");
 
     // purpurina caindo por cima de tudo
     for (const g of p.glitter) {
@@ -2502,7 +2837,7 @@
       ctx.fillRect(f.x, f.y, f.s, f.s * 0.6);
     }
 
-    if (t > 150) {
+    if (t > (p.mini ? 40 : 150)) {
       ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.1);
       outlined("Toque para continuar ▶", W / 2, H * 0.955, clamp(u * 0.045, 14, 24), "#ffffff", "#2b1d4a");
       ctx.globalAlpha = 1;
@@ -2559,7 +2894,7 @@
     nowMs = t;
     try {
       if (state === "travel") { updateTravel(dt); if (travel) drawTravel(); syncButtons(); requestAnimationFrame(loop); return; }
-      if (state === "party") { updateParty(dt); updateFx(dt); drawParty(); syncButtons(); requestAnimationFrame(loop); return; }
+      if (state === "party") { updateParty(dt); updateFx(dt); if (party) drawParty(); else draw(); syncButtons(); requestAnimationFrame(loop); return; }
       if (state === "count") updateCount(dt);
       else if (state !== "pause") update(dt);
       updateFx(dt);
@@ -2586,6 +2921,17 @@
       return segments[i].secret;
     },
     get secret() { return secret && secret.kind; },
+    get dino() { return dino && { mode: dino.mode, gap: Math.round(player.z - dino.z), target: dino.target && dino.target.name }; },
+    dinoChase(gap) { dino.mode = "chase"; dino.z = player.z - gap; },
+    toBomb() {
+      const i = segments.findIndex((sg) => sg.bombs && sg.bombs.length === 1);
+      player.z = Math.floor((player.z - lineZ) / trackLen) * trackLen + lineZ + (i - START) * SEG_L - 1500;
+      targetNX = 0; player.x = 0;
+      return i;
+    },
+    playerLast() { for (const k of karts) k.z = Math.max(k.z, player.z + 2500); },
+    dinoRest() { dino.mode = "rest"; dino.t = 99999; dino.z = player.z - 20000; player.eatenT = 0; },
+    rivalsFinish() { for (const k of karts) k.z = lineZ + LAPS * trackLen + 50; },
   };
 
   applyMute();
