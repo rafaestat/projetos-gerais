@@ -312,7 +312,12 @@
     count: (go) => tone(go ? 880 : 440, go ? 0.5 : 0.18, "square", 0.16),
     win: () => arp([72, 76, 79, 84, 79, 84, 88], 0.13, 0.25, "triangle", 0.2),
     blip: () => tone(700, 0.08, "square", 0.1),
-    roar: () => { if (AC) noiseAt(AC.currentTime, 1.0, 0.22, 150); tone(150, 0.9, "sawtooth", 0.13, 0, 60); tone(230, 0.7, "square", 0.05, 0.05, 90); },
+    roar: () => {
+      if (AC) noiseAt(AC.currentTime, 1.7, 0.3, 90);
+      tone(115, 1.5, "sawtooth", 0.17, 0, 42);
+      tone(170, 1.2, "sawtooth", 0.1, 0.06, 58);
+      tone(78, 1.6, "square", 0.07, 0, 38);
+    },
     chomp: () => { tone(320, 0.09, "square", 0.2, 0, 90); tone(320, 0.09, "square", 0.2, 0.16, 90); },
     kaboom: () => { if (AC) noiseAt(AC.currentTime, 0.7, 0.35, 60); tone(130, 0.6, "sine", 0.28, 0, 35); },
     chime: () => arp([88, 91, 95, 100], 0.06, 0.14, "sine", 0.12),
@@ -411,6 +416,23 @@
       g.font = Math.floor(res * 0.8) + "px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";
       g.fillText(e, res / 2, res * 0.54);
       emoCache.set(key, c);
+    }
+    return c;
+  }
+  // emoji pintado de uma cor só (sombra/silhueta)
+  const silCache = new Map();
+  function silhouette(e, color) {
+    const key = e + color;
+    let c = silCache.get(key);
+    if (!c) {
+      c = document.createElement("canvas");
+      c.width = c.height = 256;
+      const g = c.getContext("2d");
+      g.drawImage(emo(e, 200), 0, 0, 256, 256);
+      g.globalCompositeOperation = "source-atop";
+      g.fillStyle = color;
+      g.fillRect(0, 0, 256, 256);
+      silCache.set(key, c);
     }
     return c;
   }
@@ -639,6 +661,7 @@
   function updateDino(dt) {
     const D = dino;
     if (D.anim > 0) D.anim -= dt;
+    if (D.introT > 0) { D.introT -= dt; if (D.introT > 40) shake = Math.max(shake, 5); }
     const alive = racers.filter((r) => !r.finished && r.eatenT <= 0 && !(r === player && secret));
     const last = alive.length ? alive.reduce((a, b) => (b.z < a.z ? b : a)) : null;
     if (D.mode === "wait" || D.mode === "rest") {
@@ -648,7 +671,8 @@
         D.mode = "chase";
         if (state === "race") {
           sfx.roar();
-          if (last === player) msg("🦖 O DINOSSAURO VEM AÍ! CORRE!", "#ff5b4d", 90);
+          if (!D.introDone) { D.introDone = true; D.introT = 150; shake = Math.max(shake, 14); }
+          else if (last === player) msg("🦖 O DINOSSAURO VEM AÍ! CORRE!", "#ff5b4d", 90);
         }
       }
     } else if (D.mode === "chase") {
@@ -658,7 +682,7 @@
         const gap = last.z - D.z;
         D.speed = gap > 3500 ? last.speed * 1.3 + 10 : Math.max(last.speed + CC.dino, 25);
         D.x += (last.x - D.x) * Math.min(1, 0.04 * dt);
-        if (gap < 200 && last.jumpH < 150) {
+        if (gap < 200 && last.jumpH < 150 && !(D.introT > 0)) {
           if (last.starT > 0) {
             // com a estrela, o dinossauro é que foge!
             D.mode = "rest"; D.t = 300; D.z -= 2000;
@@ -1176,7 +1200,7 @@
       });
     };
     for (const r of racers) if (r.eatenT <= 0) addObj(r === player ? CAM_DIST : CAM_DIST + wrapS(r.z - player.z), "kart", r, r.x);
-    if (dino) addObj(CAM_DIST + wrapS(dino.z - player.z), "dino", dino, dino.x);
+    if (dino && wrapS(dino.z - player.z) > 0) addObj(CAM_DIST + wrapS(dino.z - player.z), "dino", dino, dino.x);
     for (const b of bananas) addObj(CAM_DIST + wrapS(b.z - player.z), "banana", b, b.x);
     for (const s of shells) addObj(CAM_DIST + wrapS(s.z - player.z), "shell", s, s.x);
 
@@ -1187,7 +1211,10 @@
       const bk = buckets[j - 1];
       if (bk.length) {
         if (bk.length > 1) bk.sort((a, b) => b.d - a.d);
-        for (const o of bk) drawObj(o);
+        for (const o of bk) {
+          if (o.ref === player) drawLoomingRex();
+          drawObj(o);
+        }
       }
     }
 
@@ -1301,7 +1328,7 @@
         const w = o.F * KW;
         drawKart(o.x, o.y, w, o.ref, w * 0.62 * (o.ref.jumpH / 100));
       } else if (o.kind === "dino") {
-        const D = o.ref, sz = Math.min(o.F * 1.35 * KW, H * 0.7);
+        const D = o.ref, sz = Math.min(o.F * 2.6 * KW, H * 0.9);
         const bob = Math.abs(Math.sin(D.step * 0.004)) * sz * 0.06;
         shadow(o.x, o.y, sz * 0.38);
         ctx.save();
@@ -1686,6 +1713,19 @@
       ctx.fillStyle = th.sea;
       ctx.fillRect(-20, HOR - H * 0.03, W + 40, H * 0.03 + 3);
     }
+    if (T.dino && !(dino && (dino.mode === "chase" || dino.mode === "eat"))) {
+      // o T-Rex gigante passeando atrás dos morros
+      const rs = H * 0.32, k = (nowMs * 0.000025) % 1.4 - 0.2;
+      const step = Math.abs(Math.sin(nowMs * 0.004)) * rs * 0.03;
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.translate(k * W, HOR + rs * 0.12 - step);
+      ctx.scale(-1, 1);
+      ctx.drawImage(silhouette("🦖", "#2f4a2a"), -rs / 2, -rs, rs, rs);
+      ctx.restore();
+      ctx.fillStyle = "rgba(255,60,20,0.9)";
+      circle(k * W + rs * 0.27, HOR + rs * 0.12 - step - rs * 0.8, Math.max(2, rs * 0.018));
+    }
     hillLayer(th.near, Math.max(W * 0.38, 140), H * (th.sea ? 0.02 : 0.07), 0.45, th.peaks);
     ctx.fillStyle = th.grass[0];
     ctx.fillRect(-20, HOR, W + 40, H - HOR + 20);
@@ -1789,11 +1829,11 @@
         vg.addColorStop(1, "rgba(255,40,40," + (0.5 * k * (0.75 + 0.25 * Math.sin(nowMs * 0.015))) + ")");
         ctx.fillStyle = vg;
         ctx.fillRect(0, 0, W, H);
-        const ds = u * (0.1 + 0.1 * k), cy = H * (W > H ? 0.42 : 0.62);
-        drawEmo("🦖", W / 2 - u * 0.2, cy + ds * 0.4 - Math.abs(Math.sin(nowMs * 0.012)) * 8, ds);
-        outlined("CORRE!", W / 2 + u * 0.06, cy, clamp(u * 0.08, 22, 44) * (1 + Math.sin(nowMs * 0.02) * 0.06), "#ffffff", "#d6362a");
+        const cy = H * (W > H ? 0.3 : 0.45);
+        if (!(dino.introT > 0)) outlined("CORRE!", W / 2, cy, clamp(u * 0.08, 22, 44) * (1 + Math.sin(nowMs * 0.02) * 0.06), "#ffffff", "#d6362a");
       }
     }
+    if (dino && dino.introT > 0 && state === "race") drawRexIntro(u);
     if (player.eatenT > 0) drawChomp(u);
 
     // mensagens grandes
@@ -1823,15 +1863,142 @@
       outlined("Na barriga do dinossauro...", W / 2, H * 0.62, clamp(u * 0.05, 15, 26), "#ffffff", "#2b1d4a");
       return;
     }
-    const n = 7, tw = W / n;
-    ctx.fillStyle = "#4caf50";
-    ctx.fillRect(0, 0, W, jaw);
-    ctx.fillRect(0, H - jaw, W, jaw);
-    ctx.fillStyle = "#ffffff";
-    for (let i = 0; i < n; i++) {
-      quad(i * tw + 4, jaw, (i + 1) * tw - 4, jaw, (i + 0.5) * tw, jaw + tw * 0.6, (i + 0.5) * tw, jaw + tw * 0.6);
-      quad(i * tw + 4, H - jaw, (i + 1) * tw - 4, H - jaw, (i + 0.5) * tw, H - jaw - tw * 0.6, (i + 0.5) * tw, H - jaw - tw * 0.6);
+    // a boca enorme do T-Rex fechando na tela toda
+    const S = Math.max(W * 1.1, H * 0.75);
+    drawRex(W / 2, H * 0.42 - S * 0.18 * (1 - c), S, 1 - c, nowMs * 0.06);
+    void jaw;
+  }
+
+  // a cabeçona do T-Rex logo atrás do kart da Lara, de boca aberta
+  function drawLoomingRex() {
+    if (!dino || state !== "race" || dino.mode !== "chase" || dino.target !== player || player.eatenT > 0 || secret) return;
+    const g = player.z - dino.z;
+    if (g <= 0 || g > 4500) return;
+    const k = 1 - g / 4500;
+    const S = Math.min(W * 0.95, H * 0.6) * (0.6 + 0.45 * k);
+    const hx = W / 2 + clamp((dino.x - player.x) * W * 0.25, -W * 0.2, W * 0.2);
+    const open = 0.35 + 0.6 * Math.abs(Math.sin(nowMs * 0.008));
+    drawRex(hx, lerp(H + S * 0.75, PLAYER_Y - S * 0.32, ease(k)), S, open, nowMs * 0.06);
+  }
+
+  function fitFont(text, size, maxW) {
+    ctx.font = "bold " + Math.round(size) + "px " + FONT;
+    const w = ctx.measureText(text).width;
+    return w > maxW ? (size * maxW) / w : size;
+  }
+
+  // a entrada: a cabeçona sobe pela tela rugindo
+  function drawRexIntro(u) {
+    const t = 150 - dino.introT;
+    const rise = ease(clamp(t / 30, 0, 1)) * (1 - ease(clamp((t - 120) / 30, 0, 1)));
+    ctx.fillStyle = "rgba(0,0,0," + 0.35 * rise + ")";
+    ctx.fillRect(0, 0, W, H);
+    const S = Math.min(W * 0.95, H * 0.6);
+    drawRex(W / 2, lerp(H + S * 0.75, H * (W > H ? 0.5 : 0.5), rise), S, 0.6 + 0.4 * Math.abs(Math.sin(t * 0.12)), t);
+    if (rise > 0.5) {
+      ctx.globalAlpha = clamp((rise - 0.5) * 2, 0, 1);
+      outlined("O T-REX ACORDOU!", W / 2, H * 0.12, fitFont("O T-REX ACORDOU!", clamp(u * 0.09, 24, 56), W * 0.9) * (1 + Math.sin(t * 0.3) * 0.04), "#ff5b4d", "#2b1d4a");
+      ctx.globalAlpha = 1;
     }
+  }
+
+  // T-Rex gigante desenhado (de frente, boca aberta = open de 0 a 1)
+  function drawRex(cx, cy, S, open, t) {
+    const skin = "#4a6b3c", dark = "#2c4424", light = "#86a86a", gap = open * S * 0.42;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.lineCap = "round";
+    // pescoço e barriga
+    ctx.fillStyle = dark;
+    quad(-S * 0.44, gap + S * 0.08, S * 0.44, gap + S * 0.08, S * 0.6, gap + S * 1.8, -S * 0.6, gap + S * 1.8);
+    ctx.fillStyle = skin;
+    quad(-S * 0.38, gap + S * 0.08, S * 0.38, gap + S * 0.08, S * 0.52, gap + S * 1.8, -S * 0.52, gap + S * 1.8);
+    ctx.fillStyle = light;
+    quad(-S * 0.16, gap + S * 0.32, S * 0.16, gap + S * 0.32, S * 0.24, gap + S * 1.8, -S * 0.24, gap + S * 1.8);
+    // bracinhos pequenininhos com garras
+    for (const sd of [-1, 1]) {
+      const wig = Math.sin(t * 0.2 + sd) * S * 0.03;
+      ctx.strokeStyle = skin;
+      ctx.lineWidth = S * 0.07;
+      ctx.beginPath();
+      ctx.moveTo(sd * S * 0.36, gap + S * 0.58);
+      ctx.lineTo(sd * S * 0.56, gap + S * 0.66 + wig);
+      ctx.lineTo(sd * S * 0.6, gap + S * 0.52 + wig);
+      ctx.stroke();
+      ctx.fillStyle = "#fffdf0";
+      for (let c = -1; c <= 1; c++) {
+        const x0 = sd * S * 0.6 + c * S * 0.025, y0 = gap + S * 0.5 + wig;
+        quad(x0 - S * 0.012, y0, x0 + S * 0.012, y0, x0, y0 - S * 0.05, x0, y0 - S * 0.05);
+      }
+    }
+    // mandíbula de baixo
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.moveTo(-S * 0.46, gap - S * 0.02);
+    ctx.quadraticCurveTo(-S * 0.44, gap + S * 0.34, 0, gap + S * 0.36);
+    ctx.quadraticCurveTo(S * 0.44, gap + S * 0.34, S * 0.46, gap - S * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = light;
+    ctx.beginPath(); ctx.ellipse(0, gap + S * 0.2, S * 0.26, S * 0.1, 0, 0, 7); ctx.fill();
+    // boca por dentro
+    if (gap > 1) {
+      ctx.fillStyle = "#5a0a10";
+      ctx.beginPath(); ctx.ellipse(0, gap / 2, S * 0.43, gap / 2 + S * 0.03, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#d9475a";
+      ctx.beginPath(); ctx.ellipse(0, gap - S * 0.02, S * 0.22, Math.min(S * 0.07, gap * 0.4), 0, 0, 7); ctx.fill();
+    }
+    // dentes de baixo
+    ctx.fillStyle = "#fffdf0";
+    for (let i = 0; i < 8; i++) {
+      const x = -S * 0.36 + i * S * 0.103, L = i === 0 || i === 7 ? S * 0.13 : S * 0.08;
+      quad(x - S * 0.035, gap + S * 0.01, x + S * 0.035, gap + S * 0.01, x, gap - L, x, gap - L);
+    }
+    // cabeça
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.moveTo(-S * 0.5, S * 0.03);
+    ctx.quadraticCurveTo(-S * 0.56, -S * 0.46, -S * 0.2, -S * 0.6);
+    ctx.quadraticCurveTo(0, -S * 0.67, S * 0.2, -S * 0.6);
+    ctx.quadraticCurveTo(S * 0.56, -S * 0.46, S * 0.5, S * 0.03);
+    ctx.closePath();
+    ctx.fill();
+    // espinhos e manchas
+    ctx.fillStyle = dark;
+    for (let i = -3; i <= 3; i++) {
+      const x = i * S * 0.08, y = -S * 0.62 + Math.abs(i) * S * 0.025;
+      quad(x - S * 0.035, y + S * 0.03, x + S * 0.035, y + S * 0.03, x, y - S * 0.09, x, y - S * 0.09);
+    }
+    ctx.globalAlpha = 0.5;
+    for (const [dx, dy, r] of [[-0.3, -0.05, 0.05], [0.33, -0.1, 0.04], [-0.12, -0.2, 0.03], [0.18, -0.02, 0.035], [0.4, -0.3, 0.03]]) circle(dx * S, dy * S, r * S);
+    ctx.globalAlpha = 1;
+    // narinas
+    ctx.fillStyle = "#16220f";
+    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * S * 0.09, -S * 0.44, S * 0.045, S * 0.025, sd * 0.3, 0, 7); ctx.fill(); }
+    // olhos brilhando e sobrancelha brava
+    for (const sd of [-1, 1]) {
+      const ex = sd * S * 0.3, ey = -S * 0.27;
+      const gl = ctx.createRadialGradient(ex, ey, 0, ex, ey, S * 0.14);
+      gl.addColorStop(0, "rgba(255,120,0,0.75)");
+      gl.addColorStop(1, "rgba(255,60,0,0)");
+      ctx.fillStyle = gl;
+      circle(ex, ey, S * 0.14);
+      ctx.fillStyle = "#ffd23f";
+      ctx.beginPath(); ctx.ellipse(ex, ey, S * 0.075, S * 0.058, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#ff3b1f";
+      circle(ex, ey, S * 0.045);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(ex - S * 0.008, ey - S * 0.045, S * 0.016, S * 0.09);
+      ctx.fillStyle = dark;
+      quad(sd * S * 0.17, -S * 0.31, sd * S * 0.44, -S * 0.42, sd * S * 0.45, -S * 0.35, sd * S * 0.2, -S * 0.26);
+    }
+    // dentes de cima
+    ctx.fillStyle = "#fffdf0";
+    for (let i = 0; i < 9; i++) {
+      const x = -S * 0.4 + i * S * 0.1, L = i === 1 || i === 7 ? S * 0.17 : S * 0.09;
+      quad(x - S * 0.04, S * 0.01, x + S * 0.04, S * 0.01, x, S * 0.01 + L, x, S * 0.01 + L);
+    }
+    ctx.restore();
   }
 
   /* ---------------- Botão de item e pausa --------------------------- */
@@ -2929,6 +3096,7 @@
       targetNX = 0; player.x = 0;
       return i;
     },
+    dinoWake() { dino.mode = "wait"; dino.t = 0; },
     playerLast() { for (const k of karts) k.z = Math.max(k.z, player.z + 2500); },
     dinoRest() { dino.mode = "rest"; dino.t = 99999; dino.z = player.z - 20000; player.eatenT = 0; },
     rivalsFinish() { for (const k of karts) k.z = lineZ + LAPS * trackLen + 50; },
