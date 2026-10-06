@@ -21,6 +21,19 @@ Uma corrida de kart no estilo **Mario Kart**, colorida e fácil, feita especialm
 
 No computador: setas ← → para dirigir, espaço para usar item, P para pausar.
 
+## 🦖 Lara Hopper (novo jogo, na pasta [`hopper/`](hopper/))
+
+Um joguinho de bloquinhos no estilo do *Jurassic Hopper*: a Lara (a mesma da corrida, de
+maria-chiquinha com lacinhos rosa) pula faixa por faixa até o **ninho**, desviando das manadas
+de dinossauros e pulando nas pedras dos rios. Link: https://rafaestat.github.io/projetos-gerais/hopper/
+
+- **Toque na tela** para pular para a frente; **◀ ▶** (ou arrastar) para os lados; arrastar para baixo volta.
+- O **T-Rex gigante** vem atrás devagar. Se alcança: "NHAC!" e cospe a Lara ("BLÉ!") — ninguém perde.
+- **Um único momento tenso** no meio do caminho: escurece, passos pesados, silêncio e o rugido.
+  O rugido toca só essa vez, para continuar assustador. Depois o T-Rex corre atrás por uns segundos.
+- Bater num dino só faz a Lara voltar para a grama. Estrelinhas pelo caminho; recorde salvo no celular.
+- No computador: setas ou WASD.
+
 O plano do projeto (o que já foi feito e o que vem a seguir) está em [`ROADMAP.md`](ROADMAP.md).
 
 ## Como jogar no Android (3 jeitos)

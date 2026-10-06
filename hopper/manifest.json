@@ -1,0 +1,14 @@
+{
+  "name": "Lara Hopper",
+  "short_name": "Lara Hopper",
+  "description": "Pule até o ninho e fuja do T-Rex! Um joguinho de bloquinhos para a Lara.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#8fd16a",
+  "theme_color": "#8fd16a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

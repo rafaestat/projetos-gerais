@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#8fd16a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Lara Hopper 🦖</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #2b2b3a;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", system-ui, sans-serif; }
+    button { font-family: inherit; cursor: pointer; border: none; }
+    a { font-family: inherit; }
+    #wrap { position: relative; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: #8fd16a; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    .hidden { display: none !important; }
+
+    /* ---------- Telas ---------- */
+    .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      gap: 12px; padding: max(22px, env(safe-area-inset-top)) 16px max(26px, env(safe-area-inset-bottom)); text-align: center; z-index: 10; }
+    .screen .top, .screen .bottom { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .shade { position: absolute; inset: 0; z-index: -1;
+      background: linear-gradient(180deg, rgba(94, 200, 242, 0.55) 0%, rgba(94, 200, 242, 0) 38%, rgba(0, 0, 0, 0) 62%, rgba(255, 93, 143, 0.55) 100%); }
+    .logo { line-height: 0.95; animation: bob 2.4s ease-in-out infinite; }
+    .logo-top { color: #fff; font-size: clamp(26px, 8vw, 44px); font-weight: bold; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.25); }
+    .logo-name { font-size: clamp(64px, 21vw, 130px); font-weight: 900; letter-spacing: 3px;
+      background: linear-gradient(90deg, #ff5d8f, #ffd23f, #5cd97a, #4db5ff, #a66cff); -webkit-background-clip: text; background-clip: text;
+      color: transparent; -webkit-text-stroke: 3px #fff; filter: drop-shadow(0 6px 0 rgba(43, 29, 74, 0.35)); }
+    .logo-sub { display: inline-block; margin-top: 8px; padding: 4px 16px; border-radius: 999px; background: #2b1d4a; color: #ffe14d;
+      font-size: clamp(16px, 4.6vw, 22px); font-weight: bold; }
+    @keyframes bob { 50% { transform: translateY(-6px) rotate(-1deg); } }
+    @media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
+    .hint { color: #fff; font-size: clamp(15px, 4.2vw, 20px); font-weight: bold; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+      background: rgba(43, 29, 74, 0.45); border-radius: 18px; padding: 8px 16px; line-height: 1.35; }
+    .big-btn { font-size: clamp(24px, 7vw, 36px); font-weight: bold; color: #fff; background: #ff5d8f; border-radius: 999px;
+      padding: 14px 40px; min-width: min(80vw, 340px); box-shadow: 0 8px 0 #d63b6e, 0 12px 18px rgba(0, 0, 0, 0.25); transition: transform 0.08s, box-shadow 0.08s; }
+    .big-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
+    .big-btn:focus-visible, .round-btn:focus-visible, .arrow:focus-visible { outline: 4px solid #ffd23f; outline-offset: 3px; }
+    .link-btn { font-size: clamp(15px, 4.2vw, 20px); font-weight: bold; color: #fff; background: rgba(0, 0, 0, 0.28);
+      border-radius: 999px; padding: 9px 20px; text-decoration: none; }
+    .end-card { background: rgba(255, 255, 255, 0.94); border: 5px solid #fff; border-radius: 28px; padding: 22px 20px 26px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 360px; width: 100%; margin: auto 0; }
+    .end-card h1 { font-size: clamp(30px, 9vw, 46px); line-height: 1.05; color: #ff5d8f; }
+    .end-card .sub { font-size: clamp(18px, 5vw, 24px); color: #2b1d4a; font-weight: bold; }
+    .end-card .best { font-size: 16px; color: #7d44d6; }
+
+    /* ---------- HUD ---------- */
+    #hud { position: absolute; left: 0; right: 0; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px;
+      padding: max(10px, env(safe-area-inset-top)) 14px 0; pointer-events: none; }
+    .pill { background: rgba(255, 255, 255, 0.92); color: #2b1d4a; font-weight: bold; font-size: 22px; border-radius: 999px;
+      padding: 4px 14px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .track { position: relative; flex: 1; min-width: 0; height: 14px; border-radius: 999px; background: rgba(43, 29, 74, 0.35); border: 3px solid #fff; }
+    .mk { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 22px; line-height: 1; }
+    .mk.rex { font-size: 26px; }
+    .mk.flag { left: 100%; }
+    .round-btn { pointer-events: auto; width: 46px; height: 46px; flex: none; border-radius: 50%; font-size: 20px; background: rgba(0, 0, 0, 0.32); color: #fff; }
+
+    /* setas para os lados (a frente é tocar em qualquer lugar) */
+    #pad { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: space-between;
+      padding: 0 14px max(16px, env(safe-area-inset-bottom)); pointer-events: none; }
+    .arrow { pointer-events: auto; width: 74px; height: 74px; border-radius: 24px; font-size: 34px; color: #fff;
+      background: rgba(43, 29, 74, 0.38); border: 4px solid rgba(255, 255, 255, 0.85); box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2); touch-action: none; }
+    .arrow:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" aria-label="Lara Hopper: toque para pular para a frente"></canvas>
+
+    <div id="hud" class="hidden">
+      <div class="pill" id="stars">⭐ 0</div>
+      <div class="track" aria-hidden="true">
+        <div class="mk rex" id="mkRex">🦖</div>
+        <div class="mk" id="mkLara">👧</div>
+        <div class="mk flag">🪺</div>
+      </div>
+      <button class="round-btn" id="snd" aria-label="Som">🔊</button>
+    </div>
+
+    <div id="pad" class="hidden">
+      <button class="arrow" id="left" aria-label="Pular para a esquerda">◀</button>
+      <button class="arrow" id="right" aria-label="Pular para a direita">▶</button>
+    </div>
+
+    <div id="start" class="screen">
+      <div class="shade"></div>
+      <div class="top">
+        <div class="logo">
+          <div class="logo-top">🦖 Lara</div>
+          <div class="logo-name">Hopper</div>
+        </div>
+        <div class="logo-sub">Pule até o ninho e fuja do T-Rex!</div>
+      </div>
+      <div class="bottom">
+        <p class="hint">Toque na tela para pular pra frente 👆<br>◀ ▶ para os lados</p>
+        <button class="big-btn" id="play">JOGAR ▶</button>
+        <a class="link-btn" href="../">🏎️ Corrida da Lara</a>
+      </div>
+    </div>
+
+    <div id="end" class="screen hidden">
+      <div class="end-card">
+        <h1>Parabéns, Lara! 🏆</h1>
+        <p class="sub" id="endStars">Você pegou 0 estrelinhas!</p>
+        <p class="best" id="endBest"></p>
+        <button class="big-btn" id="again">JOGAR DE NOVO 🔄</button>
+        <a class="link-btn" style="background:#4db5ff" href="../">🏎️ Corrida da Lara</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
