@@ -419,23 +419,6 @@
     }
     return c;
   }
-  // emoji pintado de uma cor só (sombra/silhueta)
-  const silCache = new Map();
-  function silhouette(e, color) {
-    const key = e + color;
-    let c = silCache.get(key);
-    if (!c) {
-      c = document.createElement("canvas");
-      c.width = c.height = 256;
-      const g = c.getContext("2d");
-      g.drawImage(emo(e, 200), 0, 0, 256, 256);
-      g.globalCompositeOperation = "source-atop";
-      g.fillStyle = color;
-      g.fillRect(0, 0, 256, 256);
-      silCache.set(key, c);
-    }
-    return c;
-  }
   function drawEmo(e, x, yb, size) {
     if (size < 2) return;
     ctx.drawImage(emo(e, size), x - size / 2, yb - size, size, size);
@@ -657,7 +640,7 @@
   /* ---------------- O dinossauro --------------------------------------
      Corre atrás de quem está ficando para trás. Quando alcança, come:
      o kart some um pouquinho (os outros passam) e depois volta. */
-  let dino = null;
+  let dino = null, rexBgShift = 0;
   function updateDino(dt) {
     const D = dino;
     if (D.anim > 0) D.anim -= dt;
@@ -671,7 +654,10 @@
         D.mode = "chase";
         if (state === "race") {
           sfx.roar();
-          if (!D.introDone) { D.introDone = true; D.introT = 150; shake = Math.max(shake, 14); }
+          if (!D.introDone) {
+            D.introDone = true; D.introT = 150; shake = Math.max(shake, 14);
+            for (let i = 0; i < 60; i++) addP(Math.random() * W, H, (Math.random() - 0.5) * 8, -6 - Math.random() * 9, 70, DEBRIS[i % DEBRIS.length], 4 + Math.random() * 7, true);
+          }
           else if (last === player) msg("🦖 O DINOSSAURO VEM AÍ! CORRE!", "#ff5b4d", 90);
         }
       }
@@ -1073,9 +1059,10 @@
   }
 
   /* ---------------- Efeitos (partículas, confete) ------------------- */
-  function addP(x, y, vx, vy, life, c, s) {
-    if (particles.length < 240) particles.push({ x, y, vx, vy, life, max: life, c, s });
+  function addP(x, y, vx, vy, life, c, s, sq) {
+    if (particles.length < 240) particles.push({ x, y, vx, vy, life, max: life, c, s, sq });
   }
+  const DEBRIS = ["#8d5524", "#a0703c", "#5aa03c", "#3d7a29", "#7cc455", "#6b4a3a"];
   function spawnConfetti(n) {
     const cols = ["#ff5d8f", "#ffd23f", "#4db5ff", "#5cd97a", "#a66cff", "#ff9f43"];
     for (let i = 0; i < n; i++) {
@@ -1099,6 +1086,14 @@
       if (show && player.starT > 0 && Math.random() < 0.5) {
         addP(W / 2 + (Math.random() - 0.5) * pw * 1.4, PLAYER_Y - lift - Math.random() * pw * 0.8, 0, -1.5, 25,
           "hsl(" + Math.floor(Math.random() * 360) + ",95%,70%)", 3 + Math.random() * 3);
+      }
+      // o T-Rex vem destruindo tudo: bloquinhos de árvore e de chão voando
+      if (dino && state === "race" && dino.mode === "chase" && dino.target === player && player.eatenT <= 0) {
+        const g = player.z - dino.z;
+        if (g > 0 && g < 3000 && Math.random() < 0.6 * (1 - g / 3000) + 0.1) {
+          const sd = Math.random() < 0.5 ? -1 : 1;
+          addP(W / 2 + sd * W * (0.2 + Math.random() * 0.3), H * 0.98, sd * (1 + Math.random() * 3), -5 - Math.random() * 6, 50, DEBRIS[Math.floor(Math.random() * DEBRIS.length)], 3 + Math.random() * 6, true);
+        }
       }
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
@@ -1222,9 +1217,8 @@
     for (const p of particles) {
       ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
       ctx.fillStyle = p.c;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.s, 0, 7);
-      ctx.fill();
+      if (p.sq) ctx.fillRect(p.x - p.s, p.y - p.s, p.s * 2, p.s * 2);
+      else { ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, 7); ctx.fill(); }
     }
     ctx.globalAlpha = 1;
     ctx.restore();
@@ -1333,9 +1327,8 @@
         shadow(o.x, o.y, sz * 0.38);
         ctx.save();
         ctx.translate(o.x, o.y - bob);
-        if (D.anim > 0) ctx.scale(1 + Math.sin(D.anim * 0.5) * 0.08, 1 - Math.sin(D.anim * 0.5) * 0.08);
-        ctx.drawImage(emo("🦖", sz), -sz / 2, -sz, sz, sz);
         ctx.restore();
+        drawRexSide(o.x, o.y - bob, sz * 0.75, D.step * 0.004, o.x < W / 2 ? 1 : -1);
         if (D.anim > 0) drawEmo("💥", o.x - sz * 0.25, o.y - sz * 0.6, sz * 0.35);
       } else if (o.kind === "banana") {
         const s = o.F * 0.2 * ROAD_W;
@@ -1715,16 +1708,9 @@
     }
     if (T.dino && !(dino && (dino.mode === "chase" || dino.mode === "eat"))) {
       // o T-Rex gigante passeando atrás dos morros
-      const rs = H * 0.32, k = (nowMs * 0.000025) % 1.4 - 0.2;
+      const rs = H * 0.26, k = ((nowMs + rexBgShift) * 0.000025) % 1.4 - 0.2;
       const step = Math.abs(Math.sin(nowMs * 0.004)) * rs * 0.03;
-      ctx.save();
-      ctx.globalAlpha = 0.92;
-      ctx.translate(k * W, HOR + rs * 0.12 - step);
-      ctx.scale(-1, 1);
-      ctx.drawImage(silhouette("🦖", "#2f4a2a"), -rs / 2, -rs, rs, rs);
-      ctx.restore();
-      ctx.fillStyle = "rgba(255,60,20,0.9)";
-      circle(k * W + rs * 0.27, HOR + rs * 0.12 - step - rs * 0.8, Math.max(2, rs * 0.018));
+      drawRexSide(k * W, HOR + rs * 0.08 - step, rs, nowMs * 0.004, 1, 0.9);
     }
     hillLayer(th.near, Math.max(W * 0.38, 140), H * (th.sea ? 0.02 : 0.07), 0.45, th.peaks);
     ctx.fillStyle = th.grass[0];
@@ -1895,6 +1881,13 @@
     ctx.fillRect(0, 0, W, H);
     const S = Math.min(W * 0.95, H * 0.6);
     drawRex(W / 2, lerp(H + S * 0.75, H * (W > H ? 0.5 : 0.5), rise), S, 0.6 + 0.4 * Math.abs(Math.sin(t * 0.12)), t);
+    for (const p of particles) {
+      if (!p.sq) continue;
+      ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(p.x - p.s, p.y - p.s, p.s * 2, p.s * 2);
+    }
+    ctx.globalAlpha = 1;
     if (rise > 0.5) {
       ctx.globalAlpha = clamp((rise - 0.5) * 2, 0, 1);
       outlined("O T-REX ACORDOU!", W / 2, H * 0.12, fitFont("O T-REX ACORDOU!", clamp(u * 0.09, 24, 56), W * 0.9) * (1 + Math.sin(t * 0.3) * 0.04), "#ff5b4d", "#2b1d4a");
@@ -1902,102 +1895,131 @@
     }
   }
 
-  // T-Rex gigante desenhado (de frente, boca aberta = open de 0 a 1)
+  // bloquinho 3D: frente + topo (mais claro) + lado (mais escuro)
+  function vbox(x, y, w, h, front, top, side, d) {
+    ctx.fillStyle = top;
+    quad(x, y, x + w, y, x + w + d, y - d, x + d, y - d);
+    ctx.fillStyle = side;
+    quad(x + w, y, x + w + d, y - d, x + w + d, y + h - d, x + w, y + h);
+    ctx.fillStyle = front;
+    ctx.fillRect(x, y, w, h);
+  }
+  const REX = { f: "#5aa03c", t: "#7cc455", s: "#3d7a29", d: "#2f5e20", belly: "#c9d98a" };
+
+  // T-Rex gigante de bloquinhos, de frente (boca aberta = open de 0 a 1)
   function drawRex(cx, cy, S, open, t) {
-    const skin = "#4a6b3c", dark = "#2c4424", light = "#86a86a", gap = open * S * 0.42;
+    const gap = open * S * 0.4, d = S * 0.07, R = REX;
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.lineCap = "round";
-    // pescoço e barriga
-    ctx.fillStyle = dark;
-    quad(-S * 0.44, gap + S * 0.08, S * 0.44, gap + S * 0.08, S * 0.6, gap + S * 1.8, -S * 0.6, gap + S * 1.8);
-    ctx.fillStyle = skin;
-    quad(-S * 0.38, gap + S * 0.08, S * 0.38, gap + S * 0.08, S * 0.52, gap + S * 1.8, -S * 0.52, gap + S * 1.8);
-    ctx.fillStyle = light;
-    quad(-S * 0.16, gap + S * 0.32, S * 0.16, gap + S * 0.32, S * 0.24, gap + S * 1.8, -S * 0.24, gap + S * 1.8);
-    // bracinhos pequenininhos com garras
+    // pescoço e corpo
+    vbox(-S * 0.42, gap + S * 0.12, S * 0.84, S * 1.7, R.f, R.t, R.s, d);
+    ctx.fillStyle = R.belly;
+    ctx.fillRect(-S * 0.2, gap + S * 0.4, S * 0.4, S * 1.5);
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    for (let i = 0; i < 6; i++) ctx.fillRect(-S * 0.2, gap + S * (0.5 + i * 0.18), S * 0.4, S * 0.02);
+    // bracinhos de bloquinho com garras
     for (const sd of [-1, 1]) {
-      const wig = Math.sin(t * 0.2 + sd) * S * 0.03;
-      ctx.strokeStyle = skin;
-      ctx.lineWidth = S * 0.07;
-      ctx.beginPath();
-      ctx.moveTo(sd * S * 0.36, gap + S * 0.58);
-      ctx.lineTo(sd * S * 0.56, gap + S * 0.66 + wig);
-      ctx.lineTo(sd * S * 0.6, gap + S * 0.52 + wig);
-      ctx.stroke();
+      const wig = Math.sin(t * 0.2 + sd) * S * 0.03, ax = sd > 0 ? S * 0.42 : -S * 0.58;
+      vbox(ax, gap + S * 0.55 + wig, S * 0.16, S * 0.08, R.f, R.t, R.s, d * 0.5);
       ctx.fillStyle = "#fffdf0";
-      for (let c = -1; c <= 1; c++) {
-        const x0 = sd * S * 0.6 + c * S * 0.025, y0 = gap + S * 0.5 + wig;
-        quad(x0 - S * 0.012, y0, x0 + S * 0.012, y0, x0, y0 - S * 0.05, x0, y0 - S * 0.05);
-      }
+      for (let c = 0; c < 2; c++) ctx.fillRect(ax + (sd > 0 ? S * 0.13 : -S * 0.02) , gap + S * 0.55 + wig + c * S * 0.045, S * 0.04, S * 0.03);
     }
     // mandíbula de baixo
-    ctx.fillStyle = skin;
-    ctx.beginPath();
-    ctx.moveTo(-S * 0.46, gap - S * 0.02);
-    ctx.quadraticCurveTo(-S * 0.44, gap + S * 0.34, 0, gap + S * 0.36);
-    ctx.quadraticCurveTo(S * 0.44, gap + S * 0.34, S * 0.46, gap - S * 0.02);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = light;
-    ctx.beginPath(); ctx.ellipse(0, gap + S * 0.2, S * 0.26, S * 0.1, 0, 0, 7); ctx.fill();
+    vbox(-S * 0.44, gap, S * 0.88, S * 0.3, R.f, R.t, R.s, d);
+    ctx.fillStyle = R.belly;
+    ctx.fillRect(-S * 0.3, gap + S * 0.18, S * 0.6, S * 0.12);
     // boca por dentro
     if (gap > 1) {
-      ctx.fillStyle = "#5a0a10";
-      ctx.beginPath(); ctx.ellipse(0, gap / 2, S * 0.43, gap / 2 + S * 0.03, 0, 0, 7); ctx.fill();
-      ctx.fillStyle = "#d9475a";
-      ctx.beginPath(); ctx.ellipse(0, gap - S * 0.02, S * 0.22, Math.min(S * 0.07, gap * 0.4), 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#6a0c18";
+      ctx.fillRect(-S * 0.4, 0, S * 0.8, gap + S * 0.01);
+      ctx.fillStyle = "#e0566a";
+      ctx.fillRect(-S * 0.22, gap - Math.min(S * 0.08, gap * 0.45), S * 0.44, Math.min(S * 0.08, gap * 0.45));
     }
-    // dentes de baixo
+    // dentes de baixo (quadradinhos)
     ctx.fillStyle = "#fffdf0";
-    for (let i = 0; i < 8; i++) {
-      const x = -S * 0.36 + i * S * 0.103, L = i === 0 || i === 7 ? S * 0.13 : S * 0.08;
-      quad(x - S * 0.035, gap + S * 0.01, x + S * 0.035, gap + S * 0.01, x, gap - L, x, gap - L);
+    for (let i = 0; i < 7; i++) {
+      const x = -S * 0.38 + i * S * 0.12, L = i === 0 || i === 6 ? S * 0.12 : S * 0.07;
+      ctx.fillRect(x, gap - L, S * 0.07, L);
     }
     // cabeça
-    ctx.fillStyle = skin;
-    ctx.beginPath();
-    ctx.moveTo(-S * 0.5, S * 0.03);
-    ctx.quadraticCurveTo(-S * 0.56, -S * 0.46, -S * 0.2, -S * 0.6);
-    ctx.quadraticCurveTo(0, -S * 0.67, S * 0.2, -S * 0.6);
-    ctx.quadraticCurveTo(S * 0.56, -S * 0.46, S * 0.5, S * 0.03);
-    ctx.closePath();
-    ctx.fill();
-    // espinhos e manchas
-    ctx.fillStyle = dark;
-    for (let i = -3; i <= 3; i++) {
-      const x = i * S * 0.08, y = -S * 0.62 + Math.abs(i) * S * 0.025;
-      quad(x - S * 0.035, y + S * 0.03, x + S * 0.035, y + S * 0.03, x, y - S * 0.09, x, y - S * 0.09);
-    }
-    ctx.globalAlpha = 0.5;
-    for (const [dx, dy, r] of [[-0.3, -0.05, 0.05], [0.33, -0.1, 0.04], [-0.12, -0.2, 0.03], [0.18, -0.02, 0.035], [0.4, -0.3, 0.03]]) circle(dx * S, dy * S, r * S);
-    ctx.globalAlpha = 1;
+    vbox(-S * 0.5, -S * 0.64, S, S * 0.66, R.f, R.t, R.s, d);
+    // espinhos no topo
+    for (let i = -3; i <= 3; i++) vbox(i * S * 0.1 - S * 0.03, -S * 0.72 - d, S * 0.06, S * 0.08, R.d, R.s, R.d, d * 0.5);
+    // manchas
+    ctx.fillStyle = R.d;
+    for (const [dx, dy, w] of [[-0.42, -0.12, 0.08], [0.3, -0.08, 0.07], [-0.1, -0.2, 0.05], [0.36, -0.58, 0.06], [-0.3, -0.56, 0.05]]) ctx.fillRect(dx * S, dy * S, w * S, w * S);
     // narinas
-    ctx.fillStyle = "#16220f";
-    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * S * 0.09, -S * 0.44, S * 0.045, S * 0.025, sd * 0.3, 0, 7); ctx.fill(); }
-    // olhos brilhando e sobrancelha brava
+    ctx.fillStyle = "#14240e";
+    for (const sd of [-1, 1]) ctx.fillRect(sd * S * 0.12 - S * 0.03, -S * 0.56, S * 0.06, S * 0.04);
+    // olhos quadrados vermelhos e brilhantes + sobrancelha brava
     for (const sd of [-1, 1]) {
-      const ex = sd * S * 0.3, ey = -S * 0.27;
-      const gl = ctx.createRadialGradient(ex, ey, 0, ex, ey, S * 0.14);
-      gl.addColorStop(0, "rgba(255,120,0,0.75)");
-      gl.addColorStop(1, "rgba(255,60,0,0)");
+      const ex = sd * S * 0.3, ey = -S * 0.36, es = S * 0.15;
+      const gl = ctx.createRadialGradient(ex, ey, 0, ex, ey, S * 0.16);
+      gl.addColorStop(0, "rgba(255,80,0,0.75)");
+      gl.addColorStop(1, "rgba(255,40,0,0)");
       ctx.fillStyle = gl;
-      circle(ex, ey, S * 0.14);
+      ctx.fillRect(ex - S * 0.16, ey - S * 0.16, S * 0.32, S * 0.32);
       ctx.fillStyle = "#ffd23f";
-      ctx.beginPath(); ctx.ellipse(ex, ey, S * 0.075, S * 0.058, 0, 0, 7); ctx.fill();
-      ctx.fillStyle = "#ff3b1f";
-      circle(ex, ey, S * 0.045);
+      ctx.fillRect(ex - es / 2, ey - es / 2, es, es);
+      ctx.fillStyle = "#ff2a10";
+      ctx.fillRect(ex - es * 0.32, ey - es * 0.32, es * 0.64, es * 0.64);
       ctx.fillStyle = "#111";
-      ctx.fillRect(ex - S * 0.008, ey - S * 0.045, S * 0.016, S * 0.09);
-      ctx.fillStyle = dark;
-      quad(sd * S * 0.17, -S * 0.31, sd * S * 0.44, -S * 0.42, sd * S * 0.45, -S * 0.35, sd * S * 0.2, -S * 0.26);
+      ctx.fillRect(ex - es * 0.12, ey - es * 0.32, es * 0.24, es * 0.64);
+      ctx.save();
+      ctx.translate(ex, ey - es * 0.75);
+      ctx.rotate(sd * 0.35);
+      ctx.fillStyle = R.d;
+      ctx.fillRect(-es * 0.8, -es * 0.18, es * 1.6, es * 0.36);
+      ctx.restore();
     }
-    // dentes de cima
+    // dentes de cima (quadradinhos, com dois dentões)
     ctx.fillStyle = "#fffdf0";
-    for (let i = 0; i < 9; i++) {
-      const x = -S * 0.4 + i * S * 0.1, L = i === 1 || i === 7 ? S * 0.17 : S * 0.09;
-      quad(x - S * 0.04, S * 0.01, x + S * 0.04, S * 0.01, x, S * 0.01 + L, x, S * 0.01 + L);
+    for (let i = 0; i < 8; i++) {
+      const x = -S * 0.42 + i * S * 0.11, L = i === 1 || i === 6 ? S * 0.15 : S * 0.08;
+      ctx.fillRect(x, S * 0.01, S * 0.075, L);
     }
+    ctx.restore();
+  }
+
+  // T-Rex de bloquinhos de lado, andando (pés em yb; dir = 1 olha para a direita)
+  function drawRexSide(x, yb, S, t, dir, alpha) {
+    const R = REX, d = S * 0.04, walk = Math.sin(t);
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x, yb);
+    ctx.scale(dir, 1);
+    // pernas (andando)
+    vbox(-S * 0.18 + walk * S * 0.06, -S * 0.36, S * 0.13, S * 0.36, R.s, R.t, R.d, d);
+    vbox(S * 0.02 - walk * S * 0.06, -S * 0.36, S * 0.13, S * 0.36, R.f, R.t, R.s, d);
+    vbox(-S * 0.2 + walk * S * 0.06, -S * 0.06, S * 0.2, S * 0.06, R.s, R.t, R.d, d);
+    vbox(S * 0.0 - walk * S * 0.06, -S * 0.06, S * 0.2, S * 0.06, R.f, R.t, R.s, d);
+    // rabo
+    vbox(-S * 0.62, -S * 0.66 + walk * S * 0.02, S * 0.26, S * 0.16, R.f, R.t, R.s, d);
+    vbox(-S * 0.82, -S * 0.62 + walk * S * 0.04, S * 0.22, S * 0.11, R.f, R.t, R.s, d);
+    vbox(-S * 0.98, -S * 0.58 + walk * S * 0.06, S * 0.18, S * 0.07, R.f, R.t, R.s, d);
+    // corpo
+    vbox(-S * 0.38, -S * 0.78, S * 0.62, S * 0.44, R.f, R.t, R.s, d);
+    ctx.fillStyle = R.belly;
+    ctx.fillRect(-S * 0.2, -S * 0.5, S * 0.44, S * 0.16);
+    // bracinho
+    vbox(S * 0.22, -S * 0.58, S * 0.12, S * 0.05, R.f, R.t, R.s, d * 0.5);
+    // pescoço e cabeça
+    vbox(S * 0.1, -S * 0.98, S * 0.22, S * 0.28, R.f, R.t, R.s, d);
+    const jaw = Math.abs(Math.sin(t * 0.7)) * S * 0.06;
+    vbox(S * 0.16, -S * 1.12, S * 0.5, S * 0.22, R.f, R.t, R.s, d);
+    vbox(S * 0.2, -S * 0.9 + jaw, S * 0.42, S * 0.08, R.f, R.t, R.s, d * 0.5);
+    ctx.fillStyle = "#6a0c18";
+    ctx.fillRect(S * 0.2, -S * 0.9, S * 0.42, jaw);
+    ctx.fillStyle = "#fffdf0";
+    for (let i = 0; i < 5; i++) ctx.fillRect(S * 0.26 + i * S * 0.075, -S * 0.9, S * 0.04, S * 0.04);
+    for (let i = 0; i < 4; i++) ctx.fillRect(S * 0.3 + i * S * 0.075, -S * 0.86 + jaw, S * 0.04, S * 0.035);
+    // olho vermelho e espinhos
+    ctx.fillStyle = "#ff2a10";
+    ctx.fillRect(S * 0.42, -S * 1.07, S * 0.08, S * 0.06);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(S * 0.46, -S * 1.07, S * 0.025, S * 0.06);
+    ctx.fillStyle = R.d;
+    for (let i = 0; i < 5; i++) ctx.fillRect(-S * 0.3 + i * S * 0.12, -S * 0.84, S * 0.06, S * 0.06);
     ctx.restore();
   }
 
@@ -3096,6 +3118,7 @@
       targetNX = 0; player.x = 0;
       return i;
     },
+    rexBg(ms) { rexBgShift = ms - nowMs; },
     dinoWake() { dino.mode = "wait"; dino.t = 0; },
     playerLast() { for (const k of karts) k.z = Math.max(k.z, player.z + 2500); },
     dinoRest() { dino.mode = "rest"; dino.t = 99999; dino.z = player.z - 20000; player.eatenT = 0; },
