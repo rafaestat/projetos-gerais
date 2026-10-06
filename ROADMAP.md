@@ -95,6 +95,16 @@ Pedido da Lara: um dinossauro **bem grande e assustador**, igual ao do jogo da T
 - **No fundo**: enquanto não está correndo, o T-Rex gigante passeia atrás dos morros
   (silhueta com olho vermelho).
 
+## ✅ Sprint 1.5 — T-Rex de bloquinhos (estilo Jurassic Hopper)
+
+Referência da Lara: o jogo **Jurassic Hopper: Crossy World** (gráfico de bloquinhos,
+dinossauros que perseguem e destroem o cenário). Sem copiar o jogo, só o estilo:
+
+- T-Rex redesenhado **de bloquinhos 3D**: cabeça quadrada, dentes quadrados, olhos
+  vermelhos quadrados brilhando, espinhos e bracinhos de bloco.
+- No fundo, o T-Rex de bloquinhos **anda de lado** (pernas e rabo mexendo, boca abrindo).
+- Na perseguição e na entrada, **bloquinhos de árvore e de chão voam** (ele destrói tudo).
+
 ## 🔜 Sprint 2 — "Teste com a Lara" (próxima)
 
 A Sprint 2 depende do **teste com a Lara**. Antes de programar mais, o ideal é ela
