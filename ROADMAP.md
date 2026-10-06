@@ -81,6 +81,20 @@ caindo do céu com turbo. Os rivais nunca usam os atalhos.
 | **Mini festinha fora do pódio** | ~4 s com os 3 primeiros no pódio e "vamos de novo! 💪"; passa sozinha ou com um toque. |
 | **Bichinhos olhando para trás** | Agora são vistos **de costas**: cabecinha com orelhas de cada um (maria-chiquinha da Lara, orelhas do gato, chifre e crina do unicórnio...). O rosto aparece no adesivo do kart e na festa, quando viram para a câmera. |
 
+## ✅ Sprint 1.4 — T-Rex gigante e assustador (entregue)
+
+Pedido da Lara: um dinossauro **bem grande e assustador**, igual ao do jogo da TV.
+
+- **T-Rex desenhado (não é mais emoji)**: cabeçona com olhos vermelhos brilhando,
+  sobrancelha brava, espinhos, bocarra com dentes enormes e bracinhos com garras.
+- **Entrada**: quando acorda, a cabeça gigante sobe na tela rugindo ("O T-REX ACORDOU!"),
+  a tela escurece e treme, com rugido mais grave.
+- **Perseguição**: a cabeça aparece logo atrás do kart da Lara, de boca aberta batendo
+  os dentes e crescendo conforme chega perto (o kart continua visível na frente).
+- **Mordida**: a boca do T-Rex fecha na tela toda.
+- **No fundo**: enquanto não está correndo, o T-Rex gigante passeia atrás dos morros
+  (silhueta com olho vermelho).
+
 ## 🔜 Sprint 2 — "Teste com a Lara" (próxima)
 
 A Sprint 2 depende do **teste com a Lara**. Antes de programar mais, o ideal é ela
