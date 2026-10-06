@@ -15,6 +15,8 @@ Uma corrida de kart no estilo **Mario Kart**, colorida e fácil, feita especialm
 - **Atalhos secretos:** em cada pista tem uma placa com seta e uma trilha de estrelinhas ✨ que leva a um
   lugar secreto (🚀 foguete ao espaço, 🌊 túnel no fundo do mar ou 🌈 escorregador nas nuvens).
 - **🚀 Modo Espaço:** uma corrida em cada planeta (Terra, Lua, Marte e Saturno), viajando pelo espaço entre eles.
+- **🦖 Vale dos Dinossauros:** o T-Rex persegue quem está em último e come quem ele alcançar. Fuja dele e
+  cuidado com as bombas 💣!
 - 3 velocidades: 🐢 Fácil, 🐇 Médio e 🚀 Rápido. 10 personagens e 9 cores de kart.
 
 No computador: setas ← → para dirigir, espaço para usar item, P para pausar.
