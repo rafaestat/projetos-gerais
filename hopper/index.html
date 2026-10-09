@@ -41,7 +41,7 @@
     .big-btn { font-size: clamp(24px, 7vw, 36px); font-weight: bold; color: #fff; background: #ff5d8f; border-radius: 999px;
       padding: 14px 40px; min-width: min(80vw, 340px); box-shadow: 0 8px 0 #d63b6e, 0 12px 18px rgba(0, 0, 0, 0.25); transition: transform 0.08s, box-shadow 0.08s; }
     .big-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
-    .big-btn:focus-visible, .round-btn:focus-visible, .arrow:focus-visible { outline: 4px solid #ffd23f; outline-offset: 3px; }
+    .big-btn:focus-visible, .round-btn:focus-visible { outline: 4px solid #ffd23f; outline-offset: 3px; }
     .link-btn { font-size: clamp(15px, 4.2vw, 20px); font-weight: bold; color: #fff; background: rgba(0, 0, 0, 0.28);
       border-radius: 999px; padding: 9px 20px; text-decoration: none; }
     .end-card { background: rgba(255, 255, 255, 0.94); border: 5px solid #fff; border-radius: 28px; padding: 22px 20px 26px;
@@ -61,12 +61,6 @@
     .mk.flag { left: 100%; }
     .round-btn { pointer-events: auto; width: 46px; height: 46px; flex: none; border-radius: 50%; font-size: 20px; background: rgba(0, 0, 0, 0.32); color: #fff; }
 
-    /* setas para os lados (a frente é tocar em qualquer lugar) */
-    #pad { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: space-between;
-      padding: 0 14px max(16px, env(safe-area-inset-bottom)); pointer-events: none; }
-    .arrow { pointer-events: auto; width: 74px; height: 74px; border-radius: 24px; font-size: 34px; color: #fff;
-      background: rgba(43, 29, 74, 0.38); border: 4px solid rgba(255, 255, 255, 0.85); box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2); touch-action: none; }
-    .arrow:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); }
   </style>
 </head>
 <body>
@@ -83,10 +77,6 @@
       <button class="round-btn" id="snd" aria-label="Som">🔊</button>
     </div>
 
-    <div id="pad" class="hidden">
-      <button class="arrow" id="left" aria-label="Pular para a esquerda">◀</button>
-      <button class="arrow" id="right" aria-label="Pular para a direita">▶</button>
-    </div>
 
     <div id="start" class="screen">
       <div class="shade"></div>
@@ -98,7 +88,7 @@
         <div class="logo-sub">Pule até o ninho e fuja do T-Rex!</div>
       </div>
       <div class="bottom">
-        <p class="hint">Toque na tela para pular 👆<br>◀ ▶ para os lados</p>
+        <p class="hint">Toque na tela para pular 👆<br>Arraste o dedo para os lados 👈👉</p>
         <button class="big-btn" id="play">JOGAR ▶</button>
         <a class="link-btn" href="../">🏎️ Corrida da Lara</a>
       </div>

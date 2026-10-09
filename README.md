@@ -28,7 +28,7 @@ maria-chiquinha com lacinhos rosa) pula faixa por faixa até o **ninho**, desvia
 de dinossauros e pulando nas pedras dos rios. Link: https://rafaestat.github.io/projetos-gerais/hopper/
 
 - A Lara corre na direção de quem joga, e o T-Rex vem atrás dela, de frente, todo de bloquinhos.
-- **Toque na tela** para pular para a frente; **◀ ▶** (ou arrastar) para os lados; arrastar para cima volta.
+- **Toque na tela** para pular para a frente; **arraste o dedo para os lados** (igual a dirigir o carrinho: cada bloquinho que o dedo anda é um passo); arrastar para cima volta.
 - Música da selva o tempo todo (a mesma da corrida); ela para no momento tenso, para o rugido assustar.
 - O **T-Rex gigante** vem atrás devagar. Se alcança: "NHAC!" e cospe a Lara ("BLÉ!") — ninguém perde.
 - **Um único momento tenso** no meio do caminho: escurece, passos pesados, silêncio e o rugido.

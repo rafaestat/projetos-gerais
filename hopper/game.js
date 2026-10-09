@@ -967,7 +967,7 @@
   }
 
   /* ---------------- HUD e telas ---------------- */
-  const hudEl = $("hud"), padEl = $("pad"), starsEl = $("stars"), mkLara = $("mkLara"), mkRex = $("mkRex");
+  const hudEl = $("hud"), starsEl = $("stars"), mkLara = $("mkLara"), mkRex = $("mkRex");
   const sndBtn = $("snd");
   function hud() {
     const s = "⭐ " + stars;
@@ -986,7 +986,7 @@
     musicPlay(0, 1);
     state = "play";
     $("start").classList.add("hidden"); $("end").classList.add("hidden");
-    hudEl.classList.remove("hidden"); padEl.classList.remove("hidden");
+    hudEl.classList.remove("hidden");
     lara.face = "front";
     addText("Pula, Lara!", { sx: 0.5, sy: 0.6, size: 40, col: "#ffd23f", life: 1.6 });
     hud();
@@ -995,26 +995,45 @@
     state = "end";
     $("endStars").textContent = stars === 1 ? "Você pegou 1 estrelinha!" : "Você pegou " + stars + " estrelinhas!";
     $("endBest").textContent = "Recorde: " + save.best + (save.best === 1 ? " estrelinha" : " estrelinhas");
-    hudEl.classList.add("hidden"); padEl.classList.add("hidden");
+    hudEl.classList.add("hidden");
     $("end").classList.remove("hidden");
   }
 
   /* ---------------- Controles ---------------- */
+  // Toque = pula para a frente. Arrastar o dedo para os lados = anda de lado,
+  // igual a dirigir o carrinho: cada pedacinho arrastado é um passo, sem tirar o dedo.
+  // Arrastar para cima = volta uma faixa.
   let ptr = null;
-  cv.addEventListener("pointerdown", (e) => { e.preventDefault(); initAudio(); ptr = { x: e.clientX, y: e.clientY }; });
-  cv.addEventListener("pointerup", (e) => {
-    if (!ptr) return;
-    const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y;
-    ptr = null;
-    const th = Math.max(26, T * 0.6);
-    if (Math.abs(dx) > th && Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 1 : -1, 0);
-    else if (dy < -th && -dy > Math.abs(dx)) move(0, -1);
-    else move(0, 1);
+  const stepPx = () => Math.max(34, T * 0.95); // um passo para cada bloquinho que o dedo anda
+  cv.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); initAudio();
+    if (ptr) return; // só o primeiro dedo
+    ptr = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ax: e.clientX, side: false };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
   });
-  cv.addEventListener("pointercancel", () => { ptr = null; });
-  for (const [id, dx] of [["left", -1], ["right", 1]]) {
-    $(id).addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); initAudio(); move(dx, 0); });
+  cv.addEventListener("pointermove", (e) => {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    const dx = e.clientX - ptr.ax, dyAll = e.clientY - ptr.y0;
+    if (!ptr.side && Math.abs(dyAll) > Math.abs(e.clientX - ptr.x0) * 1.3) return; // está arrastando para cima/baixo
+    const st = stepPx();
+    if (Math.abs(dx) >= st) {
+      ptr.side = true;
+      const dir = dx > 0 ? 1 : -1;
+      ptr.ax += dir * st;
+      move(dir, 0);
+    }
+  });
+  function endPtr(e, cancel) {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    const dx = e.clientX - ptr.x0, dy = e.clientY - ptr.y0, side = ptr.side;
+    ptr = null;
+    if (cancel || side) return;
+    const st = stepPx();
+    if (dy < -st && -dy > Math.abs(dx)) move(0, -1);       // arrastou para cima: volta
+    else if (Math.abs(dx) < st && Math.abs(dy) < st * 1.6) move(0, 1); // toque: pula para a frente
   }
+  cv.addEventListener("pointerup", (e) => endPtr(e, false));
+  cv.addEventListener("pointercancel", (e) => endPtr(e, true));
   document.addEventListener("keydown", (e) => {
     const k = e.key;
     if (state !== "play") { if ((k === "Enter" || k === " ") && state === "menu") { e.preventDefault(); startGame(); } return; }
