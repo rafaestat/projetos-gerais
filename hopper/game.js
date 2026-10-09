@@ -1,15 +1,16 @@
 /* ==========================================================================
-   Lara Hopper — no estilo do Jurassic Hopper (bloquinhos, pular faixa por faixa)
+   Lara Hopper — Caçada no Labirinto (no estilo do Jurassic Hopper 2)
    Feito para a Lara (5 anos).
 
-   - Toque na tela: pula para a frente. ◀ ▶ (ou arrastar): para os lados.
-     Arrastar para baixo: volta uma faixa.
-   - Manadas de dinossauros cruzam as trilhas; nos rios, pule nas pedras.
-   - O T-Rex gigante vem atrás, devagar. Se alcança: NHAC! e cospe a Lara (BLÉ!).
-   - Um único momento tenso no meio do jogo: escurece, passos pesados, silêncio,
-     e o ÚNICO rugido da partida. Depois ele corre atrás por alguns segundos.
-   - Ninguém perde: bater num dino só faz a Lara voltar para a grama.
-   - Chegou no ninho: festa e "Parabéns, Lara!".
+   - A Lara anda pulando pelo labirinto: para cima, para baixo e para os lados.
+     Toque na tela na direção em que ela deve pular.
+   - Botão grande 🔫 (do lado esquerdo): atira! A mira é automática no dino mais perto.
+   - Dino atingido se despedaça em bloquinhos, igual ao jogo do vídeo.
+   - Lá no alto do labirinto dorme o T-Rex gigante: o chefão, com barra de vida.
+     Ele ruge uma vez só, quando acorda. Se alcança a Lara: NHAC! e cospe ela (BLÉ!).
+   - Ninguém perde: dino que encosta só empurra a Lara ("Ai!").
+   - Funciona com controle de PlayStation por Bluetooth (direcional/analógico anda,
+     X ou R2 atira, Options começa).
    ========================================================================== */
 (() => {
   "use strict";
@@ -19,11 +20,15 @@
   const $ = (id) => document.getElementById(id);
   const FONT = "'Comic Sans MS','Chalkboard SE','Trebuchet MS',system-ui,sans-serif";
 
-  const GOAL = 50;      // faixa do ninho (chegada)
-  const TENSE_Z = 20;   // faixa do momento tenso (o único rugido)
-  const MAXX = 4;       // colunas de -4 a 4
+  const MAXX = 4;          // colunas de -4 a 4
+  const ARENA = 11;        // faixas 0..10: a arena do chefão, lá no alto
+  const MAZE_ROWS = 43;    // tamanho do labirinto (ímpar)
+  const ZMAX = ARENA + MAZE_ROWS;
+  const START_Z = ZMAX - 2;
+  const BOSS_HP = 20;
+  const BOSS_HOME = 2.6;   // onde o chefão fica de pé (ponta do focinho)
 
-  const SAVE_KEY = "laraHopper.v1";
+  const SAVE_KEY = "laraHopper.v2";
   const save = { muted: false, best: 0 };
   try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || "{}")); } catch (e) { /* tudo bem */ }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* tudo bem */ } }
@@ -47,7 +52,7 @@
     T = Math.min(W / 9.4, H / 12);   // largura de um bloquinho
     L = T * 0.82;                     // profundidade de uma faixa na tela
     YU = T * 0.8;                     // altura de um bloquinho
-    BASE = H * 0.42;                  // onde a Lara fica na tela (ela corre para baixo)
+    BASE = H * 0.6;                   // onde a Lara fica na tela (o caminho para o chefão fica em cima)
   }
 
   let camZ = 0;
@@ -244,117 +249,110 @@
   let wl = null;
   async function wake() { try { if ("wakeLock" in navigator && !wl) { wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => { wl = null; }); } } catch (e) { /* ok */ } }
 
-  /* ---------------- Mundo: faixas ---------------- */
+  // sons novos da caçada
+  sfx.pew = () => { tone(1250, 0.13, "square", 0.08, 0, 260); tone(2400, 0.08, "sine", 0.06, 0, 700); };
+  sfx.wall = () => { if (AC) noiseAt(AC.currentTime, 0.08, 0.12, "bandpass", 1800, 1); };
+  sfx.shatter = () => {
+    if (!AC) return;
+    noiseAt(AC.currentTime, 0.28, 0.35, "highpass", 1400);
+    for (let i = 0; i < 6; i++) tone(380 + Math.random() * 900, 0.05, "square", 0.07, i * 0.03, 140);
+    sfx.thump(0.4);
+  };
+  sfx.bossHit = () => { tone(190, 0.14, "sawtooth", 0.15, 0, 90); if (AC) noiseAt(AC.currentTime, 0.1, 0.22, "bandpass", 900, 1); };
+  sfx.bigBoom = () => {
+    if (!AC) return;
+    const t = AC.currentTime;
+    noiseAt(t, 1.3, 0.55, "lowpass", 900, 0.7);
+    tone(140, 1.0, "sine", 0.45, 0, 35);
+    for (let i = 0; i < 14; i++) tone(300 + Math.random() * 1200, 0.06, "square", 0.07, i * 0.05, 120);
+    sfx.thump(1);
+  };
+
   const DINOS = {
     raptor: { w: 1.0, col: "#ff9f43", sp: 2.0 },
     rexy: { w: 1.25, col: "#5cd97a", sp: 1.6 },
     trike: { w: 1.7, col: "#a66cff", sp: 1.15 },
     stego: { w: 1.85, col: "#4db5ff", sp: 1.0 },
   };
-  const BACK = { type: "grass", trees: new Map(), star: null, back: true };
-  let lanes, genZ, plan, prevRiver;
+  const HP = { raptor: 1, rexy: 2, trike: 3, stego: 3 };
+  const STEP = { raptor: 0.55, rexy: 0.7, trike: 0.95, stego: 1.05 };
 
-  function resetWorld() { lanes = new Map(); genZ = 0; plan = []; prevRiver = null; }
-  function lane(z) {
-    if (z < 0) return BACK;
-    while (genZ <= z) genNext();
-    return lanes.get(z);
-  }
-  function add(l) {
-    l.z = genZ;
-    prevRiver = l.type === "river" ? l.stones : null;
-    lanes.set(genZ, l);
-    genZ++;
-  }
-  function grassLane(maxTrees, clear) {
-    const trees = new Map();
-    if (!clear) {
-      const n = randInt(0, maxTrees);
-      for (let i = 0; i < n; i++) trees.set(randInt(-MAXX, MAXX), pick(["tree", "tree", "palm", "rock"]));
-    }
-    let star = null;
-    if (Math.random() < 0.35) { const x = randInt(-MAXX, MAXX); if (!trees.has(x)) star = x; }
-    return { type: "grass", trees, star };
-  }
-  function dinoLane(mult) {
-    const kind = pick(["raptor", "raptor", "rexy", "trike", "stego"]);
-    const D = DINOS[kind], dir = Math.random() < 0.5 ? -1 : 1;
-    const speed = D.sp * mult * rand(0.85, 1.1);
-    const dinos = [];
-    const n = kind === "raptor" ? 3 : 2;
-    let x = rand(-9, 9);
-    for (let i = 0; i < n; i++) {
-      dinos.push({ x: ((x + 9) % 18 + 18) % 18 - 9, ph: Math.random() * 6 });
-      x += D.w + (kind === "raptor" && Math.random() < 0.5 ? 0.5 : rand(3.6, 5.2));
-    }
-    return { type: "dino", kind, dir, speed, dinos, trees: new Map(), star: Math.random() < 0.25 ? randInt(-MAXX, MAXX) : null };
-  }
-  function riverLane() {
-    const s = new Set();
-    if (prevRiver) { const a = [...prevRiver].sort(() => Math.random() - 0.5); s.add(a[0]); s.add(a[1]); }
-    while (s.size < 4) s.add(randInt(-MAXX, MAXX));
-    return { type: "river", stones: s, trees: new Map(), star: null };
-  }
-  function makePlan(z) {
-    const p = z / GOAL, r = Math.random();
-    // perto do momento tenso: caminho livre para dar para fugir
-    if (z >= TENSE_Z - 3 && z < TENSE_Z + 12) {
-      plan.push(() => grassLane(0, true));
-      if (z > TENSE_Z + 1 && Math.random() < 0.45) { plan.push(() => dinoLane(0.7)); plan.push(() => grassLane(0, true)); }
-      return;
-    }
-    if (z >= GOAL - 2) { plan.push(() => grassLane(0, true)); return; }
-    if (z > 8 && r < 0.22) {
-      plan.push(() => grassLane(0, true));
-      const n = Math.random() < 0.5 ? 1 : 2;
-      for (let i = 0; i < n; i++) plan.push(riverLane);
-      plan.push(() => grassLane(0, true));
-      return;
-    }
-    if (r < 0.68) {
-      const n = 1 + Math.floor(Math.random() * (p < 0.25 ? 2 : 3));
-      for (let i = 0; i < n; i++) plan.push(() => dinoLane(0.75 + p * 0.35));
-      plan.push(() => grassLane(2));
-      return;
-    }
-    plan.push(() => grassLane(2));
-  }
-  function genNext() {
-    const z = genZ;
-    if (z < 3) { add(grassLane(1, z < 2)); return; }
-    if (z === GOAL) { add({ type: "finish", trees: new Map(), star: null }); return; }
-    if (z > GOAL) { add({ type: "nest", trees: new Map(), star: null }); return; }
-    if (!plan.length) makePlan(z);
-    add(plan.shift()());
-  }
+  /* ---------------- O mundo: arena lá em cima + labirinto embaixo ---------------- */
+  let walls = new Map(), stars = new Set();
+  const key = (x, z) => x + "," + z;
   function blocked(x, z) {
-    if (z < 0 || Math.abs(x) > MAXX) return true;
-    const l = lane(z);
-    if (l.type === "river") return !l.stones.has(x);
-    return l.trees.has(x);
+    if (z < 0 || z >= ZMAX || Math.abs(x) > MAXX) return true;
+    return walls.has(key(x, z));
+  }
+  function buildWorld() {
+    walls = new Map(); stars = new Set();
+    // labirinto: células nas colunas/linhas ímpares, paredes entre elas
+    const C = 9, R = MAZE_ROWS, open = [];
+    for (let r = 0; r < R; r++) { open.push(new Array(C).fill(false)); }
+    const st = [[1, R - 2]];
+    open[R - 2][1] = true;
+    while (st.length) {
+      const [c, r] = st[st.length - 1];
+      const nb = [[2, 0], [-2, 0], [0, 2], [0, -2]].map(([dc, dr]) => [c + dc, r + dr, dc, dr])
+        .filter(([nc, nr]) => nc >= 1 && nc <= C - 2 && nr >= 1 && nr <= R - 2 && !open[nr][nc]);
+      if (!nb.length) { st.pop(); continue; }
+      const [nc, nr, dc, dr] = pick(nb);
+      open[r + dr / 2][c + dc / 2] = true; open[nr][nc] = true;
+      st.push([nc, nr]);
+    }
+    // mais caminhos (menos becos sem saída) — fica gostoso de ir e voltar
+    for (let r = 1; r < R - 1; r++) for (let c = 1; c < C - 1; c++) {
+      if (open[r][c] || (r % 2 === 0 && c % 2 === 0)) continue;
+      const h = open[r][c - 1] && open[r][c + 1], v = open[r - 1][c] && open[r + 1][c];
+      if ((h || v) && Math.random() < 0.38) open[r][c] = true;
+    }
+    // uma clareira a cada tanto, para brigar com os dinos
+    for (let r = 6; r < R - 6; r += 12) for (let rr = r; rr < r + 3; rr++) for (let c = 2; c <= 6; c++) open[rr][c] = true;
+    // entrada da arena (linha de cima) e o comecinho (linhas de baixo) abertos
+    for (let c = 1; c < C - 1; c++) { open[0][c] = true; open[R - 1][c] = true; open[R - 2][c] = true; }
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+      const x = c - 4, z = ARENA + r;
+      if (!open[r][c]) {
+        const hv = hash(z * 13.7 + x * 5.3);
+        walls.set(key(x, z), hv > 0.82 ? "rock" : hv > 0.62 ? "palm" : "tree");
+      } else if (r > 1 && r < R - 3 && Math.random() < 0.2) stars.add(key(x, z));
+    }
+    // pedras de enfeite na arena, nos cantos
+    for (const [x, z] of [[-4, 1], [4, 1], [-4, 6], [4, 7], [-3, 10], [3, 10]]) walls.set(key(x, z), "rock");
   }
 
   /* ---------------- Estado ---------------- */
   let state = "menu";   // menu | play | end
-  let mode = "play";    // play | tense | catch | win
-  let now = 0, last = 0, shake = 0, stars = 0, paused = false;
-  let tenseT = 0, tenseDone = false, roared = false, tenseThumps = 0;
-  let catchT = 0, chomped = false, spat = false;
-  let winT = 0, endShown = false;
-  const lara = { x: 0, z: 0, fx: 0, fz: 0, hy: 0, face: "front", hop: null, queue: null, inv: 0, safeX: 0, safeZ: 0, maxZ: 0, bump: 0, bdx: 0, bdz: 0, spin: 0, idle: 0 };
-  const giant = { z: -6, boost: 0, gx: 0, ph: 0, open: 0.1, lift: 0 };
-  let tenseZ0 = 0, retreatZ = 0;
-  let wparts = [], sparts = [], texts = [], taps = [], playT = 0;
+  let mode = "play";    // play | intro | catch | win
+  let now = 0, last = 0, shake = 0, nStars = 0, kills = 0, paused = false, playT = 0;
+  let catchT = 0, chomped = false, spat = false, introT = 0, roared = false, winT = 0, endShown = false;
+  let firing = false, fireCD = 0;
+  const lara = { x: 0, z: START_Z, fx: 0, fz: START_Z, hy: 0, fdx: 0, fdz: -1, hop: null, queue: null, inv: 0, bump: 0, bdx: 0, bdz: 0, spin: 0, shootT: 0 };
+  const giant = { z: BOSS_HOME, boost: 0, gx: 0, ph: 0, open: 0.05, lift: 0, flash: 0 };
+  const boss = { state: "sleep", hp: BOSS_HP, retreat: BOSS_HOME };
+  let enemies = [], bullets = [], frags = [], wparts = [], sparts = [], texts = [], taps = [];
 
+  function spawnEnemies() {
+    enemies = [];
+    const cells = [];
+    for (let z = ARENA + 2; z < START_Z - 5; z++) for (let x = -MAXX; x <= MAXX; x++) if (!blocked(x, z)) cells.push([x, z]);
+    const n = 17;
+    for (let i = 0; i < n && cells.length; i++) {
+      const [x, z] = cells.splice(Math.floor(Math.random() * cells.length), 1)[0];
+      const kind = pick(["raptor", "raptor", "raptor", "rexy", "rexy", "trike", "stego"]);
+      enemies.push({ kind, x, z, fx: x, fz: z, x0: x, z0: z, t: rand(0.3, 1.5), mv: 0, hp: HP[kind], dir: Math.random() < 0.5 ? -1 : 1, ph: Math.random() * 6, flash: 0, rest: 0 });
+    }
+  }
   function newGame() {
-    resetWorld();
-    Object.assign(lara, { x: 0, z: 0, fx: 0, fz: 0, hy: 0, face: "front", hop: null, queue: null, inv: 0, safeX: 0, safeZ: 0, maxZ: 0, bump: 0, spin: 0, idle: 0 });
-    Object.assign(giant, { z: -6, boost: 0, gx: 0, ph: 0, open: 0.1, lift: 0 });
-    mode = "play"; stars = 0; shake = 0;
-    tenseT = 0; tenseDone = false; roared = false; tenseThumps = 0;
-    catchT = 0; chomped = false; spat = false; winT = 0; endShown = false;
-    wparts = []; sparts = []; texts = []; taps = []; playT = 0;
-    camZ = 0;
+    buildWorld();
+    spawnEnemies();
+    Object.assign(lara, { x: 0, z: START_Z, fx: 0, fz: START_Z, hy: 0, fdx: 0, fdz: -1, hop: null, queue: null, inv: 0, bump: 0, spin: 0, shootT: 0 });
+    Object.assign(giant, { z: BOSS_HOME, boost: 0, gx: 0, ph: 0, open: 0.05, lift: 0, flash: 0 });
+    Object.assign(boss, { state: "sleep", hp: BOSS_HP, retreat: BOSS_HOME });
+    mode = "play"; nStars = 0; kills = 0; shake = 0; playT = 0;
+    catchT = 0; chomped = false; spat = false; introT = 0; roared = false; winT = 0; endShown = false;
+    bullets = []; frags = []; wparts = []; sparts = []; texts = []; taps = [];
+    camZ = camTarget();
   }
 
   /* ---------------- Efeitos ---------------- */
@@ -362,12 +360,31 @@
   function dust(x, z, n) {
     for (let i = 0; i < n; i++) wparts.push({ x: x + rand(-0.3, 0.3), z: z + rand(-0.2, 0.1), y: 0.05, vx: rand(-0.8, 0.8), vz: 0, vy: rand(0.6, 1.4), g: 4, life: 0.4, max: 0.4, s: rand(0.07, 0.12), col: "#e8dcc0" });
   }
-  function sparkle(x, z) {
-    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; wparts.push({ x, z, y: 0.5, vx: Math.cos(a) * 2.2, vz: 0, vy: Math.sin(a) * 2.2, g: 0, life: 0.45, max: 0.45, s: 0.09, col: "#ffd23f" }); }
+  function sparkle(x, z, col) {
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; wparts.push({ x, z, y: 0.5, vx: Math.cos(a) * 2.2, vz: 0, vy: Math.sin(a) * 2.2, g: 0, life: 0.45, max: 0.45, s: 0.09, col: col || "#ffd23f" }); }
   }
   function confetti(n) {
     const cols = ["#ff5d8f", "#ffd23f", "#5cd97a", "#4db5ff", "#a66cff", "#ff9f43"];
     for (let i = 0; i < n; i++) sparts.push({ x: rand(0, W), y: rand(-H * 0.6, 0), vx: rand(-40, 40), vy: rand(120, 260), r: rand(0, 6), vr: rand(-6, 6), s: rand(6, 11), col: pick(cols), life: 4, max: 4 });
+  }
+  // despedaça em bloquinhos (igual ao jogo do vídeo)
+  function shatter(x, z, w, h, y0, cols, n, size) {
+    for (let i = 0; i < n; i++) {
+      const s = size * rand(0.7, 1.3);
+      frags.push({
+        x: x + rand(-w / 2, w / 2), z: z + rand(-0.25, 0.25), y: y0 + rand(0, h),
+        vx: rand(-3.2, 3.2), vz: rand(-2.2, 2.2), vy: rand(2, 6.5),
+        s, col: pick(cols), life: rand(1.3, 2.0), bounce: 0,
+      });
+    }
+    if (frags.length > 420) frags.splice(0, frags.length - 420);
+  }
+  function rumble(ms, strong) {
+    vib(ms);
+    try {
+      const gp = currentPad();
+      if (gp && gp.vibrationActuator && !save.muted) gp.vibrationActuator.playEffect("dual-rumble", { duration: ms, strongMagnitude: strong || 0.6, weakMagnitude: 0.5 });
+    } catch (e) { /* ok */ }
   }
 
   /* ---------------- Movimento da Lara ---------------- */
@@ -375,8 +392,7 @@
   function move(dx, dz) {
     if (!canControl()) return;
     if (lara.hop) { if (lara.hop.kind === "hop") lara.queue = [dx, dz]; return; }
-    lara.idle = 0;
-    lara.face = dz < 0 ? "back" : "front";
+    lara.fdx = dx; lara.fdz = dz;
     const nx = lara.x + dx, nz = lara.z + dz;
     if (blocked(nx, nz)) { lara.bump = 0.18; lara.bdx = dx; lara.bdz = dz; sfx.bump(); return; }
     startHop(nx, nz, 0.14, 0.42, "hop");
@@ -387,60 +403,128 @@
     lara.x = nx; lara.z = nz;
   }
   function land(kind) {
-    dust(lara.fx, lara.fz, kind === "hop" ? 3 : 6);
-    const l = lane(lara.z);
-    if (l.star === lara.x) { l.star = null; stars++; sfx.star(); sparkle(lara.fx, lara.fz); }
-    if (l.type === "grass" || l.type === "finish" || l.type === "nest") { lara.safeX = lara.x; lara.safeZ = lara.z; }
-    if (lara.z > lara.maxZ) lara.maxZ = lara.z;
-    if (lara.z >= GOAL && mode === "play") { startWin(); return; }
+    lara.landT = 0.12;
+    if (kind !== "hop") dust(lara.fx, lara.fz, 6);
+    const k = key(lara.x, lara.z);
+    if (stars.has(k)) { stars.delete(k); nStars++; sfx.star(); sparkle(lara.fx, lara.fz); }
+    if (boss.state === "sleep" && lara.z <= ARENA - 1) startIntro();
     if (lara.queue) { const q = lara.queue; lara.queue = null; move(q[0], q[1]); }
   }
-  function hitByDino() {
-    lara.inv = 1.6; lara.queue = null; lara.face = "front";
-    sfx.boing(); vib(70);
+  function hurt(fromX, fromZ) {
+    lara.inv = 1.4; lara.queue = null;
+    sfx.boing(); rumble(70, 0.4);
     addText("Ai!", { wx: lara.fx, wz: lara.fz, wy: 1.6, size: 34, col: "#fff" });
-    startHop(lara.safeX, lara.safeZ, 0.5, 1.0, "tumble");
+    // empurrãozinho para longe do dino
+    let dx = Math.sign(lara.x - fromX), dz = Math.sign(lara.z - fromZ);
+    if (dx && dz) { if (Math.random() < 0.5) dx = 0; else dz = 0; }
+    if (!dx && !dz) dz = 1;
+    const opts = [[dx, dz], [dz, dx], [-dz, -dx], [-dx, -dz]];
+    for (const [ox, oz] of opts) if (!blocked(lara.x + ox, lara.z + oz)) { startHop(lara.x + ox, lara.z + oz, 0.32, 0.8, "tumble"); return; }
   }
   function freeX(z, x) {
     for (let d = 0; d <= MAXX * 2; d++) for (const s of [1, -1]) { const nx = x + d * s; if (Math.abs(nx) <= MAXX && !blocked(nx, z)) return nx; }
     return 0;
   }
 
-  /* ---------------- Momentos especiais ---------------- */
-  function startTense() {
-    tenseDone = true; mode = "tense"; tenseT = 0; tenseThumps = 0; roared = false;
-    tenseZ0 = Math.min(giant.z, lara.fz - 6.5); musicStop();
-    lara.face = "front"; lara.queue = null;
+  /* ---------------- Tiro ---------------- */
+  function lineClear(x0, z0, x1, z1) {
+    const d = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(d / 0.25);
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      if (blocked(Math.round(lerp(x0, x1, t)), Math.round(lerp(z0, z1, t)))) return false;
+    }
+    return true;
+  }
+  function bossAlive() { return boss.state === "fight" || boss.state === "intro"; }
+  function findTarget() {
+    let best = null, bd = 8.5;
+    for (const e of enemies) {
+      const d = Math.hypot(e.fx - lara.fx, e.fz - lara.fz);
+      if (d < bd && lineClear(lara.fx, lara.fz, e.fx, e.fz)) { bd = d; best = { x: e.fx, z: e.fz }; }
+    }
+    if (bossAlive() && lara.z <= ARENA) {
+      const d = Math.abs(lara.fz - giant.z);
+      if (d < 11 && (!best || d < bd)) best = { x: giant.gx, z: giant.z - 0.6 };
+    }
+    return best;
+  }
+  function shoot() {
+    if (!canControl()) return;
+    const t = findTarget();
+    let vx = lara.fdx, vz = lara.fdz;
+    if (t) {
+      const dx = t.x - lara.fx, dz = t.z - lara.fz, d = Math.hypot(dx, dz) || 1;
+      vx = dx / d; vz = dz / d;
+      if (Math.abs(dx) > Math.abs(dz)) { lara.fdx = Math.sign(dx); lara.fdz = 0; } else { lara.fdx = 0; lara.fdz = Math.sign(dz) || -1; }
+    }
+    const sp = 13;
+    bullets.push({ x: lara.fx + vx * 0.35, z: lara.fz + vz * 0.35, vx: vx * sp, vz: vz * sp, life: 0.8, trail: [] });
+    lara.shootT = 0.12;
+    sfx.pew();
+  }
+  function killEnemy(e) {
+    const D = DINOS[e.kind];
+    shatter(e.fx, e.fz, D.w * 0.9, 0.7, 0.15, [D.col, shade(D.col, -0.28), shade(D.col, 0.25), "#fffbe8"], e.kind === "raptor" ? 22 : 34, 0.16);
+    sfx.shatter(); shake = Math.max(shake, 5); rumble(40, 0.3);
+    kills++;
+    addText("POF!", { wx: e.fx, wz: e.fz, wy: 1.4, size: 30, col: "#ffd23f", life: 0.8 });
+    if (Math.random() < 0.5) stars.add(key(e.x, e.z));
+  }
+  function hitBoss(b) {
+    boss.hp--;
+    giant.flash = 0.12;
+    giant.z = Math.max(BOSS_HOME - 0.6, giant.z - 0.16);
+    sfx.bossHit(); shake = Math.max(shake, 4);
+    shatter(b.x, b.z, 0.3, 0.3, 2.6, ["#5aa03c", "#4a8c31", "#ffd23f"], 5, 0.12);
+    if (boss.hp <= 0) bossDown();
+  }
+  function bossDown() {
+    boss.state = "dead";
+    const k = 1.25, cols = ["#5aa03c", "#4a8c31", "#2f5e20", "#c9d98a", "#fffdf0", "#ffd23f", "#e0566a"];
+    for (let i = 0; i < 9; i++) shatter(giant.gx, giant.z - i * 0.7 * k, 2.6 * k, 4.0 * k, 0.3, cols, 26, 0.22);
+    sfx.bigBoom(); shake = 30; rumble(500, 1);
+    addText("BUUUM!", { sx: 0.5, sy: 0.3, size: 60, col: "#ffd23f", life: 1.6 });
+    mode = "win"; winT = 0; lara.queue = null; lara.hop = null; lara.hy = 0;
+    musicStop();
+  }
+
+  /* ---------------- Momentos do chefão ---------------- */
+  function startIntro() {
+    boss.state = "intro"; mode = "intro"; introT = 0; roared = false;
+    lara.queue = null; musicStop();
   }
   function startCatch() {
     mode = "catch"; catchT = 0; chomped = false; spat = false;
-    lara.queue = null; lara.hop = null; lara.face = "front";
+    lara.queue = null; lara.hop = null;
   }
-  function startWin() {
-    mode = "win"; winT = 0; lara.face = "front"; lara.queue = null;
-    sfx.win(); musicPlay(1, 1); speak("Parabéns, Lara!"); confetti(160); vib([90, 60, 90, 60, 250]);
-    if (stars > save.best) { save.best = stars; persist(); }
-    addText("Parabéns, Lara!", { sx: 0.5, sy: 0.24, size: 44, col: "#ffd23f", life: 2.8 });
+  function giantWalk(dt, rate) {
+    const before = Math.sin(giant.ph) >= 0;
+    giant.ph += dt * rate;
+    return (Math.sin(giant.ph) >= 0) !== before;
+  }
+  function giantFace(dt, openTo, liftTo, k) {
+    giant.open = lerp(giant.open, openTo, 1 - Math.exp(-dt * (k || 8)));
+    giant.lift = lerp(giant.lift, liftTo, 1 - Math.exp(-dt * (k || 8)));
   }
 
   /* ---------------- Atualização ---------------- */
+  function camTarget() {
+    // perto da arena a câmera sobe para mostrar o T-Rex inteiro (com a Lara mais embaixo)
+    const lift = boss.state === "dead" ? 0 : clamp((ARENA + 4 - lara.fz) / 4, 0, 1) * 3.2;
+    return clamp(lara.fz - lift, 4.5, ZMAX - 4);
+  }
   function update(dt) {
     now += dt;
     shake = Math.max(0, shake - dt * 30);
-    lara.inv = Math.max(0, lara.inv - (mode === "play" ? dt : 0));
     lara.bump = Math.max(0, lara.bump - dt);
+    lara.shootT = Math.max(0, lara.shootT - dt);
+    lara.landT = Math.max(0, (lara.landT || 0) - dt);
+    giant.flash = Math.max(0, giant.flash - dt);
+    fireCD = Math.max(0, fireCD - dt);
+    if (state === "play") playT += dt;
 
-    // dinos andando (em todas as faixas já criadas perto da câmera)
-    const z0 = Math.floor(camZ) - 10, z1 = Math.floor(camZ) + 26;
-    for (let z = Math.max(0, z0); z <= z1; z++) {
-      const l = lane(z);
-      if (l.type !== "dino") continue;
-      for (const d of l.dinos) {
-        d.x += l.dir * l.speed * dt;
-        if (d.x > 9) d.x -= 18; else if (d.x < -9) d.x += 18;
-        d.ph += dt * l.speed * 7;
-      }
-    }
+    pollPad(dt);
+    if (firing && fireCD <= 0 && canControl()) { shoot(); fireCD = 0.17; }
 
     // pulo da Lara
     if (lara.hop) {
@@ -456,202 +540,178 @@
 
     if (state === "menu") {
       lara.hy = Math.abs(Math.sin(now * 3)) * 0.12;
-      giant.z = -1.1 + Math.sin(now * 0.7) * 0.2;
-      giantWalk(dt, 2.5);
-      giantFace(dt, 0.12 + 0.08 * Math.sin(now * 1.5), 0, 4);
     } else if (state === "play") {
-      if (mode === "play") updatePlay(dt);
-      else if (mode === "tense") updateTense(dt);
+      if (mode === "play" || mode === "intro") lara.inv = Math.max(0, lara.inv - dt);
+      updateEnemies(dt);
+      updateBullets(dt);
+      if (mode === "intro") updateIntro(dt);
       else if (mode === "catch") updateCatch(dt);
       else if (mode === "win") updateWin(dt);
+      else updateBoss(dt);
     }
+    // chefão dormindo: respira de boca fechadinha
+    if (boss.state === "sleep") { giantFace(dt, 0.04 + 0.03 * Math.sin(now * 1.2), Math.sin(now * 1.2) * 0.04, 3); }
 
-    camZ = lerp(camZ, lara.fz, 1 - Math.exp(-dt * 8));
+    camZ = lerp(camZ, camTarget(), 1 - Math.exp(-dt * 7));
 
     for (const p of wparts) { p.life -= dt; p.x += p.vx * dt; p.z += p.vz * dt; p.y += p.vy * dt; p.vy -= p.g * dt; }
     wparts = wparts.filter((p) => p.life > 0);
+    for (const f of frags) {
+      f.life -= dt; f.x += f.vx * dt; f.z += f.vz * dt; f.y += f.vy * dt; f.vy -= 16 * dt;
+      if (f.y < 0) { f.y = 0; if (f.bounce < 2) { f.vy = -f.vy * 0.35; f.bounce++; } else f.vy = 0; f.vx *= 0.55; f.vz *= 0.55; }
+    }
+    frags = frags.filter((f) => f.life > 0);
     for (const p of sparts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; }
     sparts = sparts.filter((p) => p.life > 0 && p.y < H + 20);
     for (const t of texts) t.life -= dt;
+    texts = texts.filter((t) => t.life > 0);
     for (const t of taps) t.life -= dt;
     taps = taps.filter((t) => t.life > 0);
-    if (state === "play") playT += dt;
-    texts = texts.filter((t) => t.life > 0);
   }
 
-  // anda com as pernas do gigante; devolve true quando um pé bate no chão
-  function giantWalk(dt, rate) {
-    const before = Math.sin(giant.ph) >= 0;
-    giant.ph += dt * rate;
-    return (Math.sin(giant.ph) >= 0) !== before;
+  function occupied(x, z, self) {
+    for (const e of enemies) if (e !== self && ((e.x === x && e.z === z) || (Math.round(e.fx) === x && Math.round(e.fz) === z))) return true;
+    return false;
   }
-  function giantFollowX(dt, k) {
-    giant.gx = lerp(giant.gx, clamp(lara.fx * 0.6, -2, 2), 1 - Math.exp(-dt * k));
-  }
-  function giantFace(dt, openTo, liftTo, k) {
-    giant.open = lerp(giant.open, openTo, 1 - Math.exp(-dt * (k || 8)));
-    giant.lift = lerp(giant.lift, liftTo, 1 - Math.exp(-dt * (k || 8)));
-  }
-
-  function updatePlay(dt) {
-    // bateu num dino?
-    if (lara.inv <= 0 && (!lara.hop || lara.hop.kind === "hop")) {
-      const l = lane(Math.round(lara.fz));
-      if (l.type === "dino") {
-        const D = DINOS[l.kind];
-        for (const d of l.dinos) if (Math.abs(d.x - lara.fx) < D.w / 2 + 0.28) { hitByDino(); break; }
+  function updateEnemies(dt) {
+    const frozen = mode !== "play";
+    for (const e of enemies) {
+      e.flash = Math.max(0, e.flash - dt);
+      e.ph += dt * 6;
+      if (e.mv > 0) {
+        e.mv = Math.max(0, e.mv - dt / 0.3);
+        const k = 1 - e.mv;
+        e.fx = lerp(e.x0, e.x, k); e.fz = lerp(e.z0, e.z, k);
+        continue;
+      }
+      if (frozen) continue;
+      e.rest = Math.max(0, e.rest - dt);
+      e.t -= dt;
+      if (e.t > 0 || e.rest > 0) continue;
+      e.t = STEP[e.kind] * rand(0.85, 1.2);
+      // perto da Lara: vem atrás dela; longe: passeia
+      const dxL = lara.x - e.x, dzL = lara.z - e.z, near = Math.abs(dxL) + Math.abs(dzL) < 8;
+      let opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dz]) => !blocked(e.x + dx, e.z + dz) && e.z + dz >= ARENA && !occupied(e.x + dx, e.z + dz, e));
+      if (!opts.length) continue;
+      let ch;
+      if (near && Math.random() < 0.75) {
+        opts.sort((a, b) => (Math.abs(dxL - a[0]) + Math.abs(dzL - a[1])) - (Math.abs(dxL - b[0]) + Math.abs(dzL - b[1])));
+        ch = opts[0];
+      } else ch = pick(opts);
+      e.x0 = e.x; e.z0 = e.z; e.x += ch[0]; e.z += ch[1]; e.mv = 1;
+      if (ch[0]) e.dir = ch[0];
+    }
+    // encostou na Lara?
+    if (mode === "play" && lara.inv <= 0 && (!lara.hop || lara.hop.kind === "hop")) {
+      for (const e of enemies) {
+        if (Math.abs(e.fx - lara.fx) < 0.6 && Math.abs(e.fz - lara.fz) < 0.55) { hurt(e.fx, e.fz); e.rest = 1.0; break; }
       }
     }
-    // parada um tempinho: vira para olhar o T-Rex
-    if (!lara.hop) { lara.idle += dt; if (lara.idle > 1.2 && lara.face === "back") lara.face = "front"; }
-
-    // momento tenso, uma vez, no meio do caminho
-    if (!tenseDone && lara.z >= TENSE_Z && !lara.hop) { startTense(); return; }
-
-    // o T-Rex gigante vem andando atrás dela, em silêncio (só se ouve quando chega bem perto)
-    const prog = clamp(lara.maxZ / GOAL, 0, 1);
-    const chasing = giant.boost > 0;
-    const sp = chasing ? 1.15 : 0.42 + 0.22 * prog;
-    if (chasing) { giant.boost -= dt; if (giant.boost <= 0 && music.on) music.tempo = 1; }
-    giant.z += sp * dt;
-    giant.z = Math.max(giant.z, lara.fz - 4.8);
-    giant.z = Math.min(giant.z, GOAL - 1.6);
-    giantFollowX(dt, 1.6);
-    const d = lara.fz - giant.z;
-    const near = clamp(1 - d / 2.8, 0, 1);
-    giantFace(dt, d < 2.6 ? 0.35 + 0.35 * Math.abs(Math.sin(now * 4)) : 0.08 + 0.05 * Math.sin(now * 2), 0, 6);
-    if (giantWalk(dt, chasing ? 9 : 5.5) && near > 0) {
-      sfx.thump(0.25 + 0.6 * near);
-      shake = Math.max(shake, 2 + 5 * near);
-      dust(giant.gx + (Math.sin(giant.ph) > 0 ? 1 : -1) * 1.2, giant.z - 3.7 * 1.25, 4);
-    }
-    if (d <= 0.25 && lara.inv <= 0 && lara.z < GOAL) { startCatch(); return; }
   }
 
-  function updateTense(dt) {
-    tenseT += dt;
-    // o gigante vem chegando, passos cada vez mais fortes... para... silêncio... e o rugido
-    const approach = ease(clamp(tenseT / 2.2, 0, 1));
-    giant.z = lerp(tenseZ0, lara.fz - 1.5, approach);
-    if (tenseT > 4.4) giant.z = lerp(lara.fz - 1.5, lara.fz - 2.8, ease(clamp((tenseT - 4.4) / 0.8, 0, 1))); // recua um pouco: dá tempo de fugir
-    giantFollowX(dt, 3);
-    if (tenseT < 2.2) giantWalk(dt, 4.2);
-    const beats = [0.7, 1.4, 2.0];
-    while (tenseThumps < beats.length && tenseT >= beats[tenseThumps]) {
-      sfx.thump([0.55, 0.8, 1.1][tenseThumps]);
-      shake = Math.max(shake, 6 + tenseThumps * 4); vib(40 + tenseThumps * 30);
-      dust(giant.gx + (tenseThumps % 2 ? 1 : -1) * 1.2, giant.z - 3.7 * 1.25, 6);
-      tenseThumps++;
+  function updateBullets(dt) {
+    for (const b of bullets) {
+      b.trail.push([b.x, b.z]); if (b.trail.length > 5) b.trail.shift();
+      const n = 3;
+      for (let i = 0; i < n && b.life > 0; i++) {
+        b.x += (b.vx * dt) / n; b.z += (b.vz * dt) / n;
+        if (blocked(Math.round(b.x), Math.round(b.z)) && !(b.z < ARENA && Math.abs(b.x) <= MAXX + 0.5)) {
+          b.life = 0; sparkle(b.x, b.z, "#ffffff"); sfx.wall(); break;
+        }
+        for (let j = 0; j < enemies.length; j++) {
+          const e = enemies[j];
+          if (Math.abs(e.fx - b.x) < 0.5 && Math.abs(e.fz - b.z) < 0.45) {
+            b.life = 0; e.hp--; e.flash = 0.12; e.rest = 0.25;
+            if (e.hp <= 0) { killEnemy(e); enemies.splice(j, 1); } else { sfx.bump(); sparkle(e.fx, e.fz, "#ffffff"); }
+            break;
+          }
+        }
+        if (b.life > 0 && boss.state === "fight") {
+          const k = 1.25;
+          if (Math.abs(b.x - giant.gx) < 1.4 * k && b.z <= giant.z + 0.4 && b.z >= giant.z - 4 * k) { b.life = 0; hitBoss(b); }
+        }
+      }
+      b.life -= dt;
     }
-    if (tenseT < 2.75) giantFace(dt, 0.05, 0, 6);
-    else if (tenseT < 4.4) giantFace(dt, 1, 0.35 + Math.sin(tenseT * 30) * 0.05, 10);
-    else giantFace(dt, 0.25, 0, 4);
-    if (!roared && tenseT >= 2.75) {
+    bullets = bullets.filter((b) => b.life > 0);
+  }
+
+  function updateIntro(dt) {
+    introT += dt;
+    // acorda: abre os olhos, levanta a cabeça... e o ÚNICO rugido do jogo
+    giant.gx = lerp(giant.gx, clamp(lara.fx * 0.5, -2, 2), 1 - Math.exp(-dt * 2));
+    if (introT < 1.0) giantFace(dt, 0.1, 0.2, 4);
+    else if (introT < 2.6) giantFace(dt, 1, 0.4 + Math.sin(introT * 30) * 0.05, 10);
+    else giantFace(dt, 0.2, 0, 4);
+    if (!roared && introT >= 1.0) {
       roared = true;
-      sfx.roar(); vib([150, 60, 250, 60, 300]); shake = 28;
-      addText("O T-REX ACORDOU!", { sx: 0.5, sy: 0.62, size: 40, col: "#ff5b4d", life: 2.3 });
+      sfx.roar(); rumble(700, 1); shake = 26;
+      addText("O T-REX GIGANTE!", { sx: 0.5, sy: 0.5, size: 40, col: "#ff5b4d", life: 2.2 });
     }
-    if (tenseT >= 5.2) {
-      mode = "play";
-      giant.boost = 7;
-      musicPlay(0, 1.3);
-      lara.face = "front";
-      addText("CORRE, LARA!", { sx: 0.5, sy: 0.62, size: 42, col: "#ffd23f", life: 1.8 });
+    if (introT >= 3.2) {
+      boss.state = "fight"; mode = "play";
+      musicPlay(0, 1.25);
+      addText("ATIRA, LARA!", { sx: 0.5, sy: 0.5, size: 42, col: "#ffd23f", life: 1.8 });
     }
+  }
+
+  function updateBoss(dt) {
+    if (boss.state !== "fight") return;
+    // anda devagar em direção à Lara (sem entrar no labirinto)
+    const target = Math.min(lara.fz - 0.1, ARENA - 1.2);
+    if (giant.z < target) giant.z = Math.min(target, giant.z + 0.34 * dt);
+    giant.gx = lerp(giant.gx, clamp(lara.fx * 0.7, -2.5, 2.5), 1 - Math.exp(-dt * 1.2));
+    const d = lara.fz - giant.z;
+    giantFace(dt, d < 2.6 ? 0.4 + 0.35 * Math.abs(Math.sin(now * 4)) : 0.15 + 0.1 * Math.abs(Math.sin(now * 2)), 0, 6);
+    if (giantWalk(dt, 4.5) && d < 5) { sfx.thump(0.3 + 0.5 * clamp(1 - d / 5, 0, 1)); shake = Math.max(shake, 2 + 4 * clamp(1 - d / 5, 0, 1)); }
+    if (d <= 0.3 && Math.abs(giant.gx - lara.fx) < 1.6 && lara.inv <= 0 && !lara.hop) startCatch();
   }
 
   function updateCatch(dt) {
     catchT += dt;
     if (catchT < 0.5) {
-      // dá o bote: abaixa a cabeça por cima dela, de boca aberta
       giant.z = lerp(giant.z, lara.fz + 0.35, 1 - Math.exp(-dt * 10));
       giant.gx = lerp(giant.gx, lara.fx, 1 - Math.exp(-dt * 10));
       giantFace(dt, 1, -1.5, 12);
     } else if (catchT < 1.8) {
       if (!chomped) {
-        chomped = true; sfx.chomp(); vib([60, 40, 120]); shake = 20;
-        addText("NHAC!", { sx: 0.5, sy: 0.38, size: 64, col: "#fff", life: 1.1 });
+        chomped = true; sfx.chomp(); rumble(160, 0.8); shake = 20;
+        addText("NHAC!", { sx: 0.5, sy: 0.7, size: 64, col: "#fff", life: 1.1 });
       }
-      // mastigando
       const was = Math.sin((catchT - dt) * 14) > 0, is = Math.sin(catchT * 14) > 0;
       if (was !== is && is) sfx.munch();
       giant.open = 0.12 * Math.abs(Math.sin(catchT * 14));
       giant.lift = lerp(giant.lift, -1.0 + Math.sin(catchT * 7) * 0.12, 1 - Math.exp(-dt * 6));
-      if (catchT > 0.9 && catchT - dt <= 0.9) addText("nhom nhom...", { sx: 0.5, sy: 0.5, size: 30, col: "#ffb3c6", life: 0.9 });
     } else {
       if (!spat) {
         spat = true;
-        // cospe a Lara para a frente, numa faixa de grama
-        let tz = -1;
-        for (let k = 2; k <= 6; k++) { const t = lane(lara.z + k).type; if (t === "grass" || t === "finish") { tz = lara.z + k; break; } }
-        if (tz < 0) tz = Math.max(lara.safeZ, lara.z);
-        const tx = freeX(tz, lara.x);
+        // cospe a Lara de volta para a entrada do labirinto
+        const tz = ARENA + 1, tx = freeX(tz, lara.x);
         lara.fx = giant.gx; lara.fz = giant.z;
-        startHop(tx, tz, 0.6, 2.6, "spit");
-        lara.inv = 1.6;
-        retreatZ = tz - 5.5;
+        startHop(tx, tz, 0.7, 2.8, "spit");
+        lara.inv = 1.8;
         sfx.pop();
-        addText("BLÉ!", { sx: 0.5, sy: 0.3, size: 56, col: "#5cd97a", life: 1.1 });
+        addText("BLÉ!", { sx: 0.5, sy: 0.6, size: 56, col: "#5cd97a", life: 1.1 });
       }
-      giantFace(dt, 0.7, 0.4, 8);
-      giant.z = lerp(giant.z, retreatZ, 1 - Math.exp(-dt * 3));
+      giantFace(dt, 0.7, 0.3, 8);
+      giant.z = lerp(giant.z, BOSS_HOME, 1 - Math.exp(-dt * 3));
       giantWalk(dt, -3);
     }
-    if (catchT >= 2.5) mode = "play";
+    if (catchT >= 2.6) mode = "play";
   }
 
   function updateWin(dt) {
     winT += dt;
-    if (!lara.hop) lara.hy = Math.abs(Math.sin(winT * 6)) * 0.5;
-    giant.z -= dt * 1.5;
-    giantWalk(dt, -4);
-    giantFace(dt, 0.1, 0, 4);
-    if (winT > 3.2 && !endShown) { endShown = true; showEnd(); }
+    if (winT > 0.9 && winT - dt <= 0.9) {
+      sfx.win(); musicPlay(1, 1); speak("Parabéns, Lara!"); confetti(180); rumble(300, 0.6);
+      addText("Parabéns, Lara!", { sx: 0.5, sy: 0.24, size: 44, col: "#ffd23f", life: 3 });
+      if (nStars > save.best) { save.best = nStars; persist(); }
+    }
+    if (winT > 0.9) lara.hy = Math.abs(Math.sin(winT * 6)) * 0.5;
+    if (winT > 4.2 && !endShown) { endShown = true; showEnd(); }
   }
 
   /* ---------------- Desenho ---------------- */
-  function drawGround(z, l, xa, xb) {
-    const y0 = SY(z - 0.5, 0), y1 = SY(z + 0.5, 0), h = y1 - y0 + 0.7;
-    for (let x = xa; x <= xb; x++) {
-      const out = Math.abs(x) > MAXX, odd = (x + z) & 1;
-      let col;
-      if (l.type === "grass") col = out ? (odd ? "#6fb553" : "#67aa4c") : (odd ? "#8fd16a" : "#84c862");
-      else if (l.type === "dino") col = out ? "#c99a5f" : (odd ? "#dcb27a" : "#d4a970");
-      else if (l.type === "river") col = "#5ec1ef";
-      else if (l.type === "finish") col = out ? "#f5d68a" : (odd ? "#ffffff" : "#ff5d8f");
-      else col = odd ? "#f7dc95" : "#f2d283";
-      ctx.fillStyle = col;
-      ctx.fillRect(SX(x - 0.5), y0, T + 0.7, h);
-      // detalhes do chão
-      const hv = hash(z * 17.3 + x * 3.1);
-      if (l.type === "grass" && !out && hv > 0.86 && !l.trees.has(x) && l.star !== x) {
-        ctx.fillStyle = hv > 0.93 ? "#ff8fb1" : "#ffe14d";
-        ctx.fillRect(SX(x - 0.2), y0 + h * 0.35, T * 0.12, T * 0.12);
-        ctx.fillRect(SX(x + 0.12), y0 + h * 0.6, T * 0.1, T * 0.1);
-      } else if (l.type === "dino" && hv > 0.72) {
-        ctx.fillStyle = "#b98a52";
-        ctx.fillRect(SX(x - 0.25), y0 + h * 0.4, T * 0.14, T * 0.1);
-        ctx.fillRect(SX(x + 0.05), y0 + h * 0.55, T * 0.14, T * 0.1);
-      }
-    }
-    if (l.type === "river") {
-      ctx.fillStyle = "#a8e2fb";
-      const dir = z % 2 ? 1 : -1;
-      for (let i = 0; i < 7; i++) {
-        const xx = ((((now * 0.5 * dir + hash(z * 7 + i) * 18) % 18) + 18) % 18) - 9;
-        ctx.fillRect(SX(xx), y0 + h * (0.25 + hash(z + i * 3) * 0.5), T * 0.5, Math.max(2, T * 0.05));
-      }
-    }
-  }
-  // degrauzinho de terra na frente de uma faixa de grama que fica atrás de trilha/rio
-  function drawLip(z, l, xa, xb) {
-    const back = lane(z - 1);
-    if ((l.type === "dino" || l.type === "river") && (back.type === "grass" || back.type === "finish")) {
-      ctx.fillStyle = l.type === "river" ? "#7a5236" : "#b88b55";
-      ctx.fillRect(SX(xa - 0.5), SY(z - 0.5, 0), (xb - xa + 1) * T, YU * 0.2);
-    }
-  }
-
   function drawTree(x, z, kind) {
     if (kind === "rock") {
       vb(x, z, 0.74, 0.6, 0.42, 0, "#9a9aa8");
@@ -735,22 +795,47 @@
   }
 
   // a Lara de bloquinhos: maria-chiquinha com lacinhos rosa (igual à da Corrida da Lara)
-  function drawLara(noShadow) {
+  // a Lara de bloquinhos: maria-chiquinha com lacinhos rosa e o lançador de estrelas
+  function drawLara() {
     if (state === "play" && mode === "catch" && catchT > 0.5 && catchT < 1.8) return;
     const bk = lara.bump > 0 ? Math.sin(((0.18 - lara.bump) / 0.18) * Math.PI) * 0.14 : 0;
     const x = lara.fx + bk * lara.bdx, z = lara.fz + bk * lara.bdz, y = lara.hy;
-    const k = 1.3, front = lara.face === "front";
-    const scared = state === "play" && (mode === "tense" || mode === "catch" || lara.fz - giant.z < 2.4);
-    if (!noShadow) shadow(x, z, 0.3 * (1 - Math.min(0.6, y * 0.3)));
+    const front = lara.fdz >= 0;            // olhando para baixo ou para os lados: vê o rostinho
+    const side = lara.fdx;
+    const scared = state === "play" && (mode === "intro" || mode === "catch");
+    // estica no ar e achata ao pousar (fica bem "boing")
+    const hopK = lara.hop && lara.hop.kind === "hop" ? lara.hop.t / lara.hop.dur : -1;
+    let sq = 1;
+    if (hopK >= 0) sq = 1 + 0.16 * Math.sin(hopK * Math.PI);
+    if (lara.landT > 0) sq = 1 - 0.18 * Math.sin((lara.landT / 0.12) * Math.PI);
+    const k = 1.3, kh = k * sq, kw = k / Math.sqrt(sq);
+    shadow(x, z, 0.3 * (1 - Math.min(0.6, y * 0.3)));
     ctx.save();
-    if (state === "play" && mode === "play" && lara.inv > 0 && Math.floor(now * 14) % 2) ctx.globalAlpha = 0.45;
+    if (state === "play" && lara.inv > 0 && Math.floor(now * 14) % 2) ctx.globalAlpha = 0.45;
     if (lara.spin) {
       const cx = SX(x), cy = SY(z, y + 0.55);
       ctx.translate(cx, cy); ctx.rotate(lara.spin); ctx.translate(-cx, -cy);
     }
-    const S = (dx, w, dz, h, y0, col) => vb(x + dx * k, z, w * k, dz * k, h * k, y + y0 * k, col);
-    const hopK = lara.hop && lara.hop.kind === "hop" ? Math.sin((lara.hop.t / lara.hop.dur) * Math.PI) : 0;
-    const wave = mode === "win" ? Math.abs(Math.sin(winT * 6)) : hopK;
+    const S = (dx, w, dz, h, y0, col) => vb(x + dx * kw, z, w * kw, dz * k, h * kh, y + y0 * kh, col);
+    const zf = z + 0.2 * k;
+    const F = (dx, yy, w, h, col) => fr(x + dx * kw, zf, y + yy * kh, w * kw, h * kh, col);
+    const wave = mode === "win" ? Math.abs(Math.sin(winT * 6)) : Math.max(0, hopK >= 0 ? Math.sin(hopK * Math.PI) : 0);
+    // lançador (atrás dela quando ela olha para cima)
+    const gun = () => {
+      const gy = 0.3, recoil = lara.shootT > 0 ? -0.06 : 0;
+      if (side) {
+        S(side * (0.36 + recoil), 0.2, 0.14, 0.12, gy, "#ffd23f");
+        S(side * (0.5 + recoil), 0.1, 0.1, 0.08, gy + 0.02, "#4db5ff");
+      } else {
+        vb(x + 0.22 * kw, z + (front ? 0.2 : -0.2) * k + recoil * (front ? 1 : -1), 0.13 * kw, 0.22 * k, 0.12 * kh, y + gy * kh, "#ffd23f");
+      }
+      if (lara.shootT > 0) {
+        const mx = side ? x + side * 0.62 * kw : x + 0.22 * kw, mz = side ? z : z + (front ? 0.45 : -0.45) * k;
+        starPath(SX(mx), SY(mz, y + (gy + 0.06) * kh), T * 0.18, T * 0.08);
+        ctx.fillStyle = "#fff6a8"; ctx.fill();
+      }
+    };
+    if (!front) gun();
     // pernas e sapatinhos
     S(-0.08, 0.12, 0.14, 0.16, 0.04, "#7d44d6"); S(0.08, 0.12, 0.14, 0.16, 0.04, "#7d44d6");
     S(-0.08, 0.13, 0.17, 0.05, 0, "#ffffff"); S(0.08, 0.13, 0.17, 0.05, 0, "#ffffff");
@@ -762,78 +847,111 @@
     S(-0.27, 0.09, 0.12, 0.2, ay, "#e9b48c"); S(0.27, 0.09, 0.12, 0.2, ay, "#e9b48c");
     // cabeça
     S(0, 0.46, 0.4, 0.4, 0.48, "#e9b48c");
-    const zf = z + 0.2 * k;
     if (front) {
-      const ey = y + 0.62 * k, eh = (scared ? 0.11 : 0.09) * k;
-      fr(x - 0.13 * k, zf, ey, 0.07 * k, eh, "#2a1a12"); fr(x + 0.06 * k, zf, ey, 0.07 * k, eh, "#2a1a12");
-      fr(x - 0.11 * k, zf, ey + eh * 0.6, 0.025 * k, 0.025 * k, "#ffffff"); fr(x + 0.08 * k, zf, ey + eh * 0.6, 0.025 * k, 0.025 * k, "#ffffff");
-      fr(x - 0.2 * k, zf, y + 0.56 * k, 0.07 * k, 0.04 * k, "#ff8fb1"); fr(x + 0.13 * k, zf, y + 0.56 * k, 0.07 * k, 0.04 * k, "#ff8fb1");
-      if (scared) fr(x - 0.04 * k, zf, y + 0.52 * k, 0.08 * k, 0.07 * k, "#7a2030");
-      else fr(x - 0.06 * k, zf, y + 0.53 * k, 0.12 * k, 0.03 * k, "#c0392b");
-      S(0, 0.5, 0.44, 0.1, 0.86, "#5a3a22");                           // topo do cabelo
-      fr(x - 0.25 * k, zf, y + 0.76 * k, 0.5 * k, 0.11 * k, "#5a3a22"); // franjinha
-      fr(x - 0.25 * k, zf, y + 0.5 * k, 0.06 * k, 0.3 * k, "#5a3a22");
-      fr(x + 0.19 * k, zf, y + 0.5 * k, 0.06 * k, 0.3 * k, "#5a3a22");
-      if (scared && mode !== "win") { // gotinha de suor
-        ctx.fillStyle = "#bfe8ff";
-        ctx.fillRect(SX(x + 0.3 * k), SY(z, y + 1.0 * k), T * 0.07, T * 0.1);
-      }
+      const ex = side * 0.04;
+      const ey = 0.62, eh = scared ? 0.11 : 0.09;
+      F(-0.13 + ex, ey, 0.07, eh, "#2a1a12"); F(0.06 + ex, ey, 0.07, eh, "#2a1a12");
+      F(-0.11 + ex, ey + eh * 0.6, 0.025, 0.025, "#ffffff"); F(0.08 + ex, ey + eh * 0.6, 0.025, 0.025, "#ffffff");
+      F(-0.2, 0.56, 0.07, 0.04, "#ff8fb1"); F(0.13, 0.56, 0.07, 0.04, "#ff8fb1");
+      if (scared) F(-0.04 + ex, 0.52, 0.08, 0.07, "#7a2030");
+      else F(-0.06 + ex, 0.53, 0.12, 0.03, "#c0392b");
+      S(0, 0.5, 0.44, 0.1, 0.86, "#5a3a22");          // topo do cabelo
+      F(-0.25, 0.76, 0.5, 0.11, "#5a3a22");            // franjinha
+      F(-0.25, 0.5, 0.06, 0.3, "#5a3a22");
+      F(0.19, 0.5, 0.06, 0.3, "#5a3a22");
     } else {
       S(0, 0.5, 0.44, 0.44, 0.46, "#5a3a22");
-      fr(x - 0.012 * k, z + 0.22 * k, y + 0.58 * k, 0.025 * k, 0.32 * k, "#3d2614"); // risca do cabelo
+      fr(x - 0.012 * kw, z + 0.22 * k, y + 0.58 * kh, 0.025 * kw, 0.32 * kh, "#3d2614"); // risca do cabelo
     }
-    // maria-chiquinha e lacinhos
-    S(-0.33, 0.15, 0.16, 0.24, 0.56, "#5a3a22"); S(0.33, 0.15, 0.16, 0.24, 0.56, "#5a3a22");
-    S(-0.27, 0.13, 0.12, 0.11, 0.78, "#ff5d8f"); S(0.27, 0.13, 0.12, 0.11, 0.78, "#ff5d8f");
+    // maria-chiquinha e lacinhos (balançam no pulo)
+    const sw = wave * 0.05;
+    S(-0.33 - sw, 0.15, 0.16, 0.24, 0.56 + sw, "#5a3a22"); S(0.33 + sw, 0.15, 0.16, 0.24, 0.56 + sw, "#5a3a22");
+    S(-0.27 - sw, 0.13, 0.12, 0.11, 0.78 + sw, "#ff5d8f"); S(0.27 + sw, 0.13, 0.12, 0.11, 0.78 + sw, "#ff5d8f");
+    if (front) gun();
     ctx.restore();
   }
 
-  function drawFinish(z) {
-    for (const sd of [-1, 1]) { vb(sd * 4.7, z, 0.28, 0.28, 3.3, 0, "#ffffff"); vb(sd * 4.7, z, 0.34, 0.34, 0.14, 3.3, "#ffd23f"); }
-    const cols = ["#ff5d8f", "#ffd23f", "#5cd97a", "#4db5ff", "#a66cff"];
-    const x1 = SX(-4.56), x2 = SX(4.56), yt = SY(z, 3.25), yb = SY(z, 2.55), sh = (yb - yt) / cols.length;
-    cols.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(x1, yt + i * sh, x2 - x1, sh + 0.5); });
-    outlined("NINHO!", W / 2, (yt + yb) / 2, Math.min(yb - yt, T * 0.9) * 0.95, "#ffffff", "#2b1d4a");
+  /* ---------------- Chão, mundo e efeitos ---------------- */
+  function drawGround(z, xa, xb) {
+    const y0 = SY(z - 0.5, 0), y1 = SY(z + 0.5, 0), h = y1 - y0 + 0.7;
+    const arena = z < ARENA;
+    for (let x = xa; x <= xb; x++) {
+      const out = Math.abs(x) > MAXX || z < 0 || z >= ZMAX, odd = (x + z) & 1;
+      let col;
+      if (out) col = odd ? "#5fa94a" : "#58a044";
+      else if (arena) col = odd ? "#e6b97c" : "#ddae70";
+      else col = odd ? "#92d66c" : "#86cb63";
+      ctx.fillStyle = col;
+      ctx.fillRect(SX(x - 0.5), y0, T + 0.7, h);
+      const hv = hash(z * 17.3 + x * 3.1);
+      if (!out && !arena && hv > 0.86 && !walls.has(key(x, z))) {
+        ctx.fillStyle = hv > 0.93 ? "#ff8fb1" : "#ffe14d";
+        ctx.fillRect(SX(x - 0.2), y0 + h * 0.35, T * 0.12, T * 0.12);
+        ctx.fillRect(SX(x + 0.12), y0 + h * 0.6, T * 0.1, T * 0.1);
+      } else if (arena && hv > 0.7) {
+        ctx.fillStyle = "#c99a5f";
+        ctx.fillRect(SX(x - 0.25), y0 + h * 0.4, T * 0.14, T * 0.1);
+        ctx.fillRect(SX(x + 0.05), y0 + h * 0.55, T * 0.14, T * 0.1);
+      }
+    }
   }
-  function drawNest(z) {
-    vb(0, z, 1.9, 1.3, 0.22, 0, "#a0703c");
-    vb(0, z, 1.5, 0.9, 0.08, 0.22, "#c99a5f");
-    [["#ffb3d9", -0.4], ["#bfe8ff", 0], ["#fff2a8", 0.4]].forEach(([c, ox], i) => {
-      const bob = state === "play" && mode === "win" ? Math.abs(Math.sin(winT * 5 + i)) * 0.15 : 0;
-      vb(ox, z, 0.3, 0.3, 0.42, 0.24 + bob, c);
-      fr(ox - 0.06, z + 0.15, 0.4 + bob, 0.05, 0.05, shade(c, -0.25));
-    });
+  function drawBullet(b) {
+    for (let i = 0; i < b.trail.length; i++) {
+      const [tx, tz] = b.trail[i], a = (i + 1) / (b.trail.length + 1);
+      ctx.fillStyle = "rgba(255,240,140," + (0.5 * a).toFixed(3) + ")";
+      ctx.beginPath(); ctx.arc(SX(tx), SY(tz, 0.42), T * 0.1 * a + 1, 0, Math.PI * 2); ctx.fill();
+    }
+    const cx = SX(b.x), cy = SY(b.z, 0.42);
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, T * 0.32);
+    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.35, "rgba(255,226,77,0.95)"); g.addColorStop(1, "rgba(255,93,143,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, T * 0.32, 0, Math.PI * 2); ctx.fill();
+  }
+  function drawFrag(f) {
+    ctx.globalAlpha = clamp(f.life / 0.5, 0, 1);
+    vb(f.x, f.z, f.s, f.s, f.s, f.y, f.col, true);
+    ctx.globalAlpha = 1;
   }
 
   function drawWorld() {
-    // a câmera olha de frente para a Lara: o que vem pela frente aparece embaixo, o T-Rex fica em cima (atrás dela)
     const above = Math.ceil(BASE / L) + 4, below = Math.ceil((H - BASE) / L) + 2;
     const zTop = Math.floor(camZ) - above, zBottom = Math.floor(camZ) + below;
     const xr = Math.ceil(W / 2 / T) + 1;
     const lz = Math.floor(lara.fz + 0.001), zg = Math.floor(giant.z);
-    if (zg < zTop) drawGiant();
+    const showBoss = boss.state !== "dead";
+    // agrupa por faixa o que anda (dinos, pedacinhos, tiros) para desenhar na ordem certa
+    const rowsE = new Map(), rowsF = new Map();
+    for (const e of enemies) { const r = Math.round(e.fz); (rowsE.get(r) || rowsE.set(r, []).get(r)).push(e); }
+    for (const f of frags) { const r = Math.round(f.z); (rowsF.get(r) || rowsF.set(r, []).get(r)).push(f); }
+    if (showBoss && zg < zTop) drawGiant();
     for (let z = zTop; z <= zBottom; z++) {
-      const l = lane(z);
-      drawGround(z, l, -xr, xr);
-      drawLip(z, l, -xr, xr);
-      if (l.type === "river") for (const s of l.stones) drawStone(s, z);
-      // árvores enfeitando as bordas
-      if (l.type === "grass" || l.type === "nest") {
-        for (let x = -xr; x <= xr; x++) {
-          if (Math.abs(x) <= MAXX) continue;
-          const hv = hash(z * 31.7 + x * 7.3);
-          if (hv > 0.42) drawTree(x, z, hv > 0.8 ? "palm" : hv > 0.5 ? "tree" : "rock");
-        }
+      drawGround(z, -xr, xr);
+      // mato fechado em volta (fora do labirinto)
+      for (let x = -xr; x <= xr; x++) {
+        if (Math.abs(x) <= MAXX && z >= 0 && z < ZMAX) continue;
+        const hv = hash(z * 31.7 + x * 7.3);
+        if (hv > 0.3) drawTree(x, z, hv > 0.82 ? "palm" : hv > 0.45 ? "tree" : "rock");
       }
-      if (l.trees.size) for (const [x, kind] of l.trees) drawTree(x, z, kind);
-      if (l.star != null) drawStar(l.star, z);
-      if (l.type === "finish") drawFinish(z);
-      if (l.type === "nest" && z === GOAL + 5) drawNest(z);
-      if (l.type === "dino") for (const d of l.dinos) if (Math.abs(d.x) < xr + 1.5) drawDino(l, d);
+      for (let x = -MAXX; x <= MAXX; x++) {
+        const w = walls.get(key(x, z));
+        if (w) drawTree(x, z, w);
+        else if (stars.has(key(x, z))) drawStar(x, z);
+      }
+      const es = rowsE.get(z);
+      if (es) for (const e of es) {
+        if (e.flash > 0) ctx.globalAlpha = 0.5;
+        const hopY = e.mv > 0 ? Math.sin((1 - e.mv) * Math.PI) * 0.18 : 0;
+        ctx.save(); ctx.translate(0, -hopY * YU);
+        drawDino({ kind: e.kind, dir: e.dir, z: e.fz }, { x: e.fx, ph: e.ph });
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+      const fs = rowsF.get(z);
+      if (fs) for (const f of fs) drawFrag(f);
       if (z === lz) drawLara();
-      if (z === zg) drawGiant();
+      if (showBoss && z === zg) drawGiant();
     }
     if (lz > zBottom || lz < zTop) drawLara();
+    for (const b of bullets) drawBullet(b);
     for (const p of wparts) {
       ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
       ctx.fillStyle = p.col;
@@ -843,11 +961,62 @@
     ctx.globalAlpha = 1;
   }
 
-  /* T-Rex gigante de bloquinhos, no mesmo mundo da Lara.
-     A Lara corre na direção de quem joga; o T-Rex vem logo atrás dela, olhando para a frente:
-     cara com olhos brilhando e dentes, bracinhos, pernas pisando, costas com placas e o rabo balançando lá atrás. */
-  const REX = { f: "#5aa03c", s: "#4a8c31", d: "#2f5e20", belly: "#c9d98a", mouth: "#8a1424", tongue: "#e0566a", tooth: "#fffdf0" };
+  // setinhas em volta da Lara mostrando para onde ela pode pular (fortes no começo, depois clarinhas)
+  function drawGuides() {
+    if (state !== "play" || mode !== "play") return;
+    const a = playT < 8 ? 0.85 : 0.2 + 0.07 * Math.sin(now * 3);
+    const cx = SX(lara.x), cy = SY(lara.z, 0.45), s = T * 0.3, bob = Math.sin(now * 6) * T * 0.05;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.lineJoin = "round"; ctx.lineWidth = Math.max(3, T * 0.08); ctx.strokeStyle = "#2b1d4a"; ctx.fillStyle = "#ffffff";
+    const tri = (x, y, dx, dy) => {
+      const px = -dy, py = dx;
+      ctx.beginPath();
+      ctx.moveTo(x + dx * s, y + dy * s);
+      ctx.lineTo(x - dx * s * 0.6 + px * s, y - dy * s * 0.6 + py * s);
+      ctx.lineTo(x - dx * s * 0.6 - px * s, y - dy * s * 0.6 - py * s);
+      ctx.closePath(); ctx.stroke(); ctx.fill();
+    };
+    if (!blocked(lara.x - 1, lara.z)) tri(cx - T * 1.0 - bob, cy, -1, 0);
+    if (!blocked(lara.x + 1, lara.z)) tri(cx + T * 1.0 + bob, cy, 1, 0);
+    if (!blocked(lara.x, lara.z + 1)) tri(cx, SY(lara.z + 1, 0.2) + bob, 0, 1);
+    if (!blocked(lara.x, lara.z - 1)) tri(cx, SY(lara.z - 1, 1.6) - bob, 0, -1);
+    ctx.restore();
+  }
+  function drawTaps() {
+    for (const t of taps) {
+      const k = 1 - t.life / 0.4;
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.7;
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = Math.max(3, T * 0.09);
+      ctx.beginPath(); ctx.arc(t.x, t.y, T * (0.25 + 0.45 * k), 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+  function drawBossBar() {
+    if (boss.state !== "fight" && boss.state !== "intro") return;
+    const w = Math.min(W * 0.8, 360), h = 18, x = (W - w) / 2, y = Math.max(64, H * 0.085);
+    const k = boss.state === "intro" ? clamp(introT / 1.2, 0, 1) : boss.hp / BOSS_HP;
+    ctx.save();
+    ctx.fillStyle = "rgba(43,29,74,0.75)";
+    roundRect(x - 6, y - 6, w + 12, h + 12, 14); ctx.fill();
+    ctx.fillStyle = "#4a1020"; roundRect(x, y, w, h, 9); ctx.fill();
+    const g = ctx.createLinearGradient(x, 0, x + w, 0);
+    g.addColorStop(0, "#ff5b4d"); g.addColorStop(1, "#ffb03d");
+    ctx.fillStyle = g; roundRect(x, y, Math.max(h, w * k), h, 9); ctx.fill();
+    outlined("T-REX", x + w / 2, y + h / 2 + 1, 15, "#ffffff", "#2b1d4a");
+    ctx.restore();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  const REX_BASE = { f: "#5aa03c", s: "#4a8c31", d: "#2f5e20", belly: "#c9d98a", mouth: "#8a1424", tongue: "#e0566a", tooth: "#fffdf0" };
+  const REX_FLASH = { f: "#e9ffd9", s: "#d9f5c8", d: "#b9e0a8", belly: "#ffffff", mouth: "#ff9db0", tongue: "#ffc2cf", tooth: "#ffffff" };
+  let REX = REX_BASE;
   function drawGiant() {
+    REX = giant.flash > 0 ? REX_FLASH : REX_BASE;
     const k = 1.25, Z0 = giant.z, GX = giant.gx, lift = giant.lift, open = clamp(giant.open, 0, 1);
     if (SY(Z0, 0) < -10) return; // ainda lá em cima, fora da tela
     const B = (dx, dz, w, ddz, h, y, col) => vb(GX + dx * k, Z0 + dz * k, w * k, ddz * k, h * k, y * k, col);
@@ -925,39 +1094,6 @@
     }
   }
 
-  // setinhas em volta da Lara mostrando para onde ela pode pular (fortes no começo, depois bem clarinhas)
-  function drawGuides() {
-    if (state !== "play" || mode !== "play") return;
-    const a = playT < 8 ? 0.85 : 0.22 + 0.08 * Math.sin(now * 3);
-    const cx = SX(lara.x), cy = SY(lara.z, 0.45), s = T * 0.36, bob = Math.sin(now * 6) * T * 0.05;
-    ctx.save();
-    ctx.globalAlpha = a;
-    ctx.lineJoin = "round"; ctx.lineWidth = Math.max(3, T * 0.08); ctx.strokeStyle = "#2b1d4a"; ctx.fillStyle = "#ffffff";
-    const tri = (x, y, dx, dy) => {
-      const px = -dy, py = dx;
-      ctx.beginPath();
-      ctx.moveTo(x + dx * s, y + dy * s);
-      ctx.lineTo(x - dx * s * 0.6 + px * s, y - dy * s * 0.6 + py * s);
-      ctx.lineTo(x - dx * s * 0.6 - px * s, y - dy * s * 0.6 - py * s);
-      ctx.closePath(); ctx.stroke(); ctx.fill();
-    };
-    if (!blocked(lara.x - 1, lara.z)) tri(cx - T * 1.05 - bob, cy, -1, 0);
-    if (!blocked(lara.x + 1, lara.z)) tri(cx + T * 1.05 + bob, cy, 1, 0);
-    if (!blocked(lara.x, lara.z + 1)) tri(cx, SY(lara.z + 1, 0.15) + bob, 0, 1);
-    ctx.restore();
-  }
-  // bolinha onde o dedo tocou, com a setinha do pulo escolhido
-  function drawTaps() {
-    for (const t of taps) {
-      const k = 1 - t.life / 0.4;
-      ctx.save();
-      ctx.globalAlpha = (1 - k) * 0.7;
-      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = Math.max(3, T * 0.09);
-      ctx.beginPath(); ctx.arc(t.x, t.y, T * (0.25 + 0.45 * k), 0, Math.PI * 2); ctx.stroke();
-      ctx.restore();
-    }
-  }
-
   function drawTexts() {
     for (const t of texts) {
       const age = t.max - t.life, pop = 0.6 + 0.4 * Math.min(1, age / 0.12);
@@ -976,42 +1112,38 @@
   function render() {
     ctx.save();
     if (shake > 0.3) ctx.translate(rand(-1, 1) * shake * 0.6, rand(-1, 1) * shake * 0.6);
-    ctx.fillStyle = "#6fb553"; ctx.fillRect(-30, -30, W + 60, H + 60);
+    ctx.fillStyle = "#58a044"; ctx.fillRect(-30, -30, W + 60, H + 60);
     drawWorld();
     drawGuides();
-    if (state === "play" && mode === "tense") {
-      const r = ease(clamp(tenseT / 2.2, 0, 1)) * (1 - ease(clamp((tenseT - 4.4) / 0.8, 0, 1)));
-      ctx.fillStyle = "rgba(20,10,35," + (0.5 * r).toFixed(3) + ")";
+    if (state === "play" && mode === "intro") {
+      const r = ease(clamp(introT / 0.8, 0, 1)) * (1 - ease(clamp((introT - 2.6) / 0.6, 0, 1)));
+      ctx.fillStyle = "rgba(20,10,35," + (0.4 * r).toFixed(3) + ")";
       ctx.fillRect(-30, -30, W + 60, H + 60);
+      drawGiant(); drawLara();
     }
-    if (state === "play" && mode === "tense") { drawGiant(); drawLara(true); }
     ctx.restore();
-    // bordas vermelhas quando ele está colado (ou correndo atrás)
-    if (state === "play" && mode === "play") {
-      const d = lara.fz - giant.z, danger = giant.boost > 0 ? 0.8 : clamp(1 - (d - 0.5) / 2, 0, 1);
-      if (danger > 0.05) {
-        const g = ctx.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.35, W / 2, H * 0.55, Math.max(W, H) * 0.75);
-        g.addColorStop(0, "rgba(255,40,40,0)"); g.addColorStop(1, "rgba(255,40,40," + (0.45 * danger).toFixed(3) + ")");
-        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      }
-    }
+    // um céu de selva bem colorido nas bordas (deixa tudo mais vivo)
+    const vg = ctx.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.45, W / 2, H * 0.55, Math.max(W, H) * 0.8);
+    vg.addColorStop(0, "rgba(255,200,120,0)"); vg.addColorStop(1, "rgba(255,140,90,0.22)");
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     for (const p of sparts) {
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
       ctx.fillStyle = p.col; ctx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * 0.66);
       ctx.restore();
     }
+    drawBossBar();
     drawTaps();
     drawTexts();
   }
 
   /* ---------------- HUD e telas ---------------- */
-  const hudEl = $("hud"), starsEl = $("stars"), mkLara = $("mkLara"), mkRex = $("mkRex");
+  const hudEl = $("hud"), fireBtn = $("fire"), starsEl = $("stars"), killsEl = $("kills"), mkLara = $("mkLara");
   const sndBtn = $("snd");
   function hud() {
-    const s = "⭐ " + stars;
+    const s = "⭐ " + nStars, kl = "🦖 " + kills;
     if (starsEl.textContent !== s) starsEl.textContent = s;
-    mkLara.style.left = clamp(lara.fz / GOAL, 0, 1) * 100 + "%";
-    mkRex.style.left = clamp(giant.z / GOAL, 0, 1) * 100 + "%";
+    if (killsEl.textContent !== kl) killsEl.textContent = kl;
+    mkLara.style.left = clamp((START_Z - lara.fz) / (START_Z - ARENA + 1), 0, 1) * 100 + "%";
   }
   function setSound() {
     sndBtn.textContent = save.muted ? "🔇" : "🔊";
@@ -1024,43 +1156,100 @@
     musicPlay(0, 1);
     state = "play";
     $("start").classList.add("hidden"); $("end").classList.add("hidden");
-    hudEl.classList.remove("hidden");
-    lara.face = "front";
-    addText("Pula, Lara!", { sx: 0.5, sy: 0.6, size: 40, col: "#ffd23f", life: 1.6 });
+    hudEl.classList.remove("hidden"); fireBtn.classList.remove("hidden");
+    addText("Vai, Lara!", { sx: 0.5, sy: 0.4, size: 42, col: "#ffd23f", life: 1.6 });
     hud();
   }
   function showEnd() {
     state = "end";
-    $("endStars").textContent = stars === 1 ? "Você pegou 1 estrelinha!" : "Você pegou " + stars + " estrelinhas!";
-    $("endBest").textContent = "Recorde: " + save.best + (save.best === 1 ? " estrelinha" : " estrelinhas");
-    hudEl.classList.add("hidden");
+    $("endStars").textContent = "⭐ " + nStars + "   🦖 " + kills;
+    $("endBest").textContent = "Recorde de estrelinhas: " + save.best;
+    hudEl.classList.add("hidden"); fireBtn.classList.add("hidden");
     $("end").classList.remove("hidden");
   }
 
-  /* ---------------- Controles ---------------- */
-  // Controle: a Lara pula na direção em que você toca.
-  // Tocar do lado dela = pula para aquele lado. Tocar em qualquer outro lugar (na frente dela) = pula para a frente.
-  // Um toque é sempre um pulo, decidido na hora em que o dedo encosta (sem arrastar, sem dúvida).
+  /* ---------------- Controles: toque ---------------- */
+  // A Lara pula na direção em que você toca (para cima, para baixo ou para os lados).
   cv.addEventListener("pointerdown", (e) => {
     e.preventDefault(); initAudio();
     if (state !== "play") return;
     const r = cv.getBoundingClientRect();
     const tx = e.clientX - r.left, ty = e.clientY - r.top;
     const dx = tx - SX(lara.fx), dy = ty - SY(lara.fz, 0.5);
-    let mx = 0, mz = 1;
-    // do lado: mais para o lado do que para baixo, e não muito longe da linha dela
-    if (Math.abs(dx) > T * 0.55 && Math.abs(dx) > dy * 1.1 && dy < L * 2.2) { mx = dx > 0 ? 1 : -1; mz = 0; }
     taps.push({ x: tx, y: ty, life: 0.4 });
-    move(mx, mz);
+    if (Math.abs(dx) > Math.abs(dy)) move(Math.sign(dx), 0);
+    else move(0, Math.sign(dy) || -1);
   });
+  // botão de tiro: segurar = tiro sem parar
+  const fireOn = (e) => { e.preventDefault(); e.stopPropagation(); initAudio(); firing = true; fireBtn.classList.add("on"); };
+  const fireOff = (e) => { if (e) e.preventDefault(); firing = false; fireBtn.classList.remove("on"); };
+  fireBtn.addEventListener("pointerdown", fireOn);
+  fireBtn.addEventListener("pointerup", fireOff);
+  fireBtn.addEventListener("pointercancel", fireOff);
+  fireBtn.addEventListener("pointerleave", fireOff);
+  fireBtn.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  /* ---------------- Controles: teclado ---------------- */
+  let keyFire = false;
   document.addEventListener("keydown", (e) => {
     const k = e.key;
-    if (state !== "play") { if ((k === "Enter" || k === " ") && state === "menu") { e.preventDefault(); startGame(); } return; }
-    if (k === "ArrowDown" || k === "s" || k === " ") { e.preventDefault(); move(0, 1); }
-    else if (k === "ArrowUp" || k === "w") { e.preventDefault(); move(0, -1); }
+    if (state !== "play") { if ((k === "Enter" || k === " ") && state !== "play") { e.preventDefault(); startGame(); } return; }
+    if (k === "ArrowUp" || k === "w") { e.preventDefault(); move(0, -1); }
+    else if (k === "ArrowDown" || k === "s") { e.preventDefault(); move(0, 1); }
     else if (k === "ArrowLeft" || k === "a") { e.preventDefault(); move(-1, 0); }
     else if (k === "ArrowRight" || k === "d") { e.preventDefault(); move(1, 0); }
+    else if (k === " " || k === "j" || k === "x") { e.preventDefault(); keyFire = true; firing = true; }
   });
+  document.addEventListener("keyup", (e) => {
+    if ((e.key === " " || e.key === "j" || e.key === "x") && keyFire) { keyFire = false; firing = false; }
+  });
+
+  /* ---------------- Controles: controle de PlayStation (Bluetooth) ----------------
+     Direcional ou analógico esquerdo: anda. X, quadrado, R1, R2, L1 ou L2: atira. Options/X nas telas: joga. */
+  let padIndex = -1, padPrev = [], padDir = null, padRepeat = 0, padFiring = false;
+  function currentPad() {
+    if (padIndex < 0 || !navigator.getGamepads) return null;
+    try { return navigator.getGamepads()[padIndex] || null; } catch (e) { return null; }
+  }
+  window.addEventListener("gamepadconnected", (e) => {
+    padIndex = e.gamepad.index;
+    initAudio();
+    addText("🎮 Controle ligado!", { sx: 0.5, sy: 0.88, size: 28, col: "#ffffff", life: 2 });
+    const hint = $("padHint"); if (hint) hint.classList.remove("hidden");
+  });
+  window.addEventListener("gamepaddisconnected", (e) => { if (e.gamepad.index === padIndex) { padIndex = -1; if (padFiring) { padFiring = false; firing = false; } } });
+  function pollPad(dt) {
+    if (!navigator.getGamepads) return;
+    let gp = currentPad();
+    if (!gp) {
+      // alguns celulares só avisam o controle depois do primeiro botão
+      try { for (const g of navigator.getGamepads()) if (g && g.connected) { padIndex = g.index; gp = g; break; } } catch (e) { return; }
+      if (!gp) return;
+    }
+    const b = (i) => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.4));
+    const pressed = (i) => b(i) && !padPrev[i];
+    const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+    let dir = null;
+    if (b(12) || ay < -0.55) dir = [0, -1];
+    else if (b(13) || ay > 0.55) dir = [0, 1];
+    else if (b(14) || ax < -0.55) dir = [-1, 0];
+    else if (b(15) || ax > 0.55) dir = [1, 0];
+    if (state === "play") {
+      if (dir) {
+        const same = padDir && padDir[0] === dir[0] && padDir[1] === dir[1];
+        padRepeat -= dt;
+        if (!same || padRepeat <= 0) { move(dir[0], dir[1]); padRepeat = same ? 0.17 : 0.3; }
+      }
+      const fireNow = b(0) || b(2) || b(4) || b(5) || b(6) || b(7);
+      if (fireNow && !padFiring) { padFiring = true; firing = true; }
+      else if (!fireNow && padFiring) { padFiring = false; if (!keyFire && !fireBtn.classList.contains("on")) firing = false; }
+    } else if (pressed(0) || pressed(9) || pressed(1)) {
+      startGame();
+    }
+    padDir = dir;
+    padPrev = gp.buttons.map((x) => x.pressed || x.value > 0.4);
+  }
+
   $("play").addEventListener("click", startGame);
   $("again").addEventListener("click", startGame);
   sndBtn.addEventListener("click", (e) => { e.stopPropagation(); save.muted = !save.muted; persist(); initAudio(); setSound(); });
@@ -1073,6 +1262,7 @@
     paused = document.visibilityState !== "visible";
     if (AC) { if (paused) AC.suspend().catch(() => {}); else AC.resume().catch(() => {}); }
     if (!paused && state === "play") wake();
+    firing = false; fireBtn.classList.remove("on");
     last = 0;
   });
 
@@ -1096,5 +1286,10 @@
   requestAnimationFrame(frame);
 
   // ganchos para teste automático (não afetam o jogo)
-  window.__hopper = { get state() { return state; }, get mode() { return mode; }, lara, giant, move, startGame, update, render, lane, get stars() { return stars; }, get audio() { return AC ? AC.state : "none"; }, get musicOn() { return music.on; } };
+  window.__hopper = {
+    get state() { return state; }, get mode() { return mode; }, lara, giant, boss, move, shoot, startGame,
+    get enemies() { return enemies; }, get kills() { return kills; }, get stars() { return nStars; }, blocked,
+    get audio() { return AC ? AC.state : "none"; }, get musicOn() { return music.on; },
+    setFiring(v) { firing = v; },
+  };
 })();

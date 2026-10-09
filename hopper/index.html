@@ -61,22 +61,35 @@
     .mk.flag { left: 100%; }
     .round-btn { pointer-events: auto; width: 46px; height: 46px; flex: none; border-radius: 50%; font-size: 20px; background: rgba(0, 0, 0, 0.32); color: #fff; }
 
+    /* ---------- botão de tiro: grande, do lado esquerdo (a mão que ela usa para os itens na corrida) ---------- */
+    #fire { position: absolute; z-index: 6; left: max(16px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom));
+      width: 108px; height: 108px; border-radius: 50%; font-size: 46px; line-height: 1; color: #fff;
+      background: radial-gradient(circle at 35% 30%, #ffb27a, #ff5b4d 55%, #d6362a); border: 5px solid #fff;
+      box-shadow: 0 8px 0 #9e2219, 0 12px 20px rgba(0, 0, 0, 0.3); touch-action: none; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px; transition: transform 0.06s, box-shadow 0.06s; }
+    #fire small { font-size: 15px; font-weight: bold; letter-spacing: 1px; }
+    #fire.on { transform: translateY(6px) scale(0.96); box-shadow: 0 2px 0 #9e2219, 0 4px 10px rgba(0, 0, 0, 0.3); }
+    #fire:focus-visible { outline: 4px solid #ffd23f; outline-offset: 3px; }
+    .pad-hint { color: #2b1d4a; background: #ffe14d; border-radius: 999px; padding: 4px 14px; font-weight: bold; font-size: 15px; }
+
   </style>
 </head>
 <body>
   <div id="wrap">
-    <canvas id="game" aria-label="Lara Hopper: toque para pular para a frente"></canvas>
+    <canvas id="game" aria-label="Lara Hopper: toque para onde a Lara deve pular"></canvas>
 
     <div id="hud" class="hidden">
       <div class="pill" id="stars">⭐ 0</div>
+      <div class="pill" id="kills">🦖 0</div>
       <div class="track" aria-hidden="true">
-        <div class="mk rex" id="mkRex">🦖</div>
         <div class="mk" id="mkLara">👧</div>
-        <div class="mk flag">🪺</div>
+        <div class="mk rex flag">🦖</div>
       </div>
       <button class="round-btn" id="snd" aria-label="Som">🔊</button>
     </div>
 
+
+    <button id="fire" class="hidden" aria-label="Atirar">💥<small>TIRO</small></button>
 
     <div id="start" class="screen">
       <div class="shade"></div>
@@ -85,10 +98,11 @@
           <div class="logo-top">🦖 Lara</div>
           <div class="logo-name">Hopper</div>
         </div>
-        <div class="logo-sub">Pule até o ninho e fuja do T-Rex!</div>
+        <div class="logo-sub">Caçada no labirinto dos dinos!</div>
       </div>
       <div class="bottom">
-        <p class="hint">Toque <b>na frente</b> da Lara para pular 👇<br>Toque <b>do lado</b> para ir pro lado 👈👉</p>
+        <p class="hint">Toque para onde a Lara deve pular 👆<br>Aperte 💥 para atirar nos dinos!<br>Lá em cima te espera o T-Rex gigante...</p>
+        <p class="pad-hint hidden" id="padHint">🎮 Controle ligado: aperte X para jogar</p>
         <button class="big-btn" id="play">JOGAR ▶</button>
         <a class="link-btn" href="../">🏎️ Corrida da Lara</a>
       </div>
@@ -96,8 +110,8 @@
 
     <div id="end" class="screen hidden">
       <div class="end-card">
-        <h1>Parabéns, Lara! 🏆</h1>
-        <p class="sub" id="endStars">Você pegou 0 estrelinhas!</p>
+        <h1>Você derrotou o T-Rex! 🏆</h1>
+        <p class="sub" id="endStars">⭐ 0   🦖 0</p>
         <p class="best" id="endBest"></p>
         <button class="big-btn" id="again">JOGAR DE NOVO 🔄</button>
         <a class="link-btn" style="background:#4db5ff" href="../">🏎️ Corrida da Lara</a>
