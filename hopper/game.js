@@ -344,7 +344,7 @@
   const lara = { x: 0, z: 0, fx: 0, fz: 0, hy: 0, face: "front", hop: null, queue: null, inv: 0, safeX: 0, safeZ: 0, maxZ: 0, bump: 0, bdx: 0, bdz: 0, spin: 0, idle: 0 };
   const giant = { z: -6, boost: 0, gx: 0, ph: 0, open: 0.1, lift: 0 };
   let tenseZ0 = 0, retreatZ = 0;
-  let wparts = [], sparts = [], texts = [];
+  let wparts = [], sparts = [], texts = [], taps = [], playT = 0;
 
   function newGame() {
     resetWorld();
@@ -353,7 +353,7 @@
     mode = "play"; stars = 0; shake = 0;
     tenseT = 0; tenseDone = false; roared = false; tenseThumps = 0;
     catchT = 0; chomped = false; spat = false; winT = 0; endShown = false;
-    wparts = []; sparts = []; texts = [];
+    wparts = []; sparts = []; texts = []; taps = []; playT = 0;
     camZ = 0;
   }
 
@@ -473,6 +473,9 @@
     for (const p of sparts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; }
     sparts = sparts.filter((p) => p.life > 0 && p.y < H + 20);
     for (const t of texts) t.life -= dt;
+    for (const t of taps) t.life -= dt;
+    taps = taps.filter((t) => t.life > 0);
+    if (state === "play") playT += dt;
     texts = texts.filter((t) => t.life > 0);
   }
 
@@ -922,6 +925,39 @@
     }
   }
 
+  // setinhas em volta da Lara mostrando para onde ela pode pular (fortes no começo, depois bem clarinhas)
+  function drawGuides() {
+    if (state !== "play" || mode !== "play") return;
+    const a = playT < 8 ? 0.85 : 0.22 + 0.08 * Math.sin(now * 3);
+    const cx = SX(lara.x), cy = SY(lara.z, 0.45), s = T * 0.36, bob = Math.sin(now * 6) * T * 0.05;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.lineJoin = "round"; ctx.lineWidth = Math.max(3, T * 0.08); ctx.strokeStyle = "#2b1d4a"; ctx.fillStyle = "#ffffff";
+    const tri = (x, y, dx, dy) => {
+      const px = -dy, py = dx;
+      ctx.beginPath();
+      ctx.moveTo(x + dx * s, y + dy * s);
+      ctx.lineTo(x - dx * s * 0.6 + px * s, y - dy * s * 0.6 + py * s);
+      ctx.lineTo(x - dx * s * 0.6 - px * s, y - dy * s * 0.6 - py * s);
+      ctx.closePath(); ctx.stroke(); ctx.fill();
+    };
+    if (!blocked(lara.x - 1, lara.z)) tri(cx - T * 1.05 - bob, cy, -1, 0);
+    if (!blocked(lara.x + 1, lara.z)) tri(cx + T * 1.05 + bob, cy, 1, 0);
+    if (!blocked(lara.x, lara.z + 1)) tri(cx, SY(lara.z + 1, 0.15) + bob, 0, 1);
+    ctx.restore();
+  }
+  // bolinha onde o dedo tocou, com a setinha do pulo escolhido
+  function drawTaps() {
+    for (const t of taps) {
+      const k = 1 - t.life / 0.4;
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.7;
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = Math.max(3, T * 0.09);
+      ctx.beginPath(); ctx.arc(t.x, t.y, T * (0.25 + 0.45 * k), 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
   function drawTexts() {
     for (const t of texts) {
       const age = t.max - t.life, pop = 0.6 + 0.4 * Math.min(1, age / 0.12);
@@ -942,6 +978,7 @@
     if (shake > 0.3) ctx.translate(rand(-1, 1) * shake * 0.6, rand(-1, 1) * shake * 0.6);
     ctx.fillStyle = "#6fb553"; ctx.fillRect(-30, -30, W + 60, H + 60);
     drawWorld();
+    drawGuides();
     if (state === "play" && mode === "tense") {
       const r = ease(clamp(tenseT / 2.2, 0, 1)) * (1 - ease(clamp((tenseT - 4.4) / 0.8, 0, 1)));
       ctx.fillStyle = "rgba(20,10,35," + (0.5 * r).toFixed(3) + ")";
@@ -963,6 +1000,7 @@
       ctx.fillStyle = p.col; ctx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * 0.66);
       ctx.restore();
     }
+    drawTaps();
     drawTexts();
   }
 
@@ -1000,40 +1038,21 @@
   }
 
   /* ---------------- Controles ---------------- */
-  // Toque = pula para a frente. Arrastar o dedo para os lados = anda de lado,
-  // igual a dirigir o carrinho: cada pedacinho arrastado é um passo, sem tirar o dedo.
-  // Arrastar para cima = volta uma faixa.
-  let ptr = null;
-  const stepPx = () => Math.max(34, T * 0.95); // um passo para cada bloquinho que o dedo anda
+  // Controle: a Lara pula na direção em que você toca.
+  // Tocar do lado dela = pula para aquele lado. Tocar em qualquer outro lugar (na frente dela) = pula para a frente.
+  // Um toque é sempre um pulo, decidido na hora em que o dedo encosta (sem arrastar, sem dúvida).
   cv.addEventListener("pointerdown", (e) => {
     e.preventDefault(); initAudio();
-    if (ptr) return; // só o primeiro dedo
-    ptr = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ax: e.clientX, side: false };
-    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
+    if (state !== "play") return;
+    const r = cv.getBoundingClientRect();
+    const tx = e.clientX - r.left, ty = e.clientY - r.top;
+    const dx = tx - SX(lara.fx), dy = ty - SY(lara.fz, 0.5);
+    let mx = 0, mz = 1;
+    // do lado: mais para o lado do que para baixo, e não muito longe da linha dela
+    if (Math.abs(dx) > T * 0.55 && Math.abs(dx) > dy * 1.1 && dy < L * 2.2) { mx = dx > 0 ? 1 : -1; mz = 0; }
+    taps.push({ x: tx, y: ty, life: 0.4 });
+    move(mx, mz);
   });
-  cv.addEventListener("pointermove", (e) => {
-    if (!ptr || e.pointerId !== ptr.id) return;
-    const dx = e.clientX - ptr.ax, dyAll = e.clientY - ptr.y0;
-    if (!ptr.side && Math.abs(dyAll) > Math.abs(e.clientX - ptr.x0) * 1.3) return; // está arrastando para cima/baixo
-    const st = stepPx();
-    if (Math.abs(dx) >= st) {
-      ptr.side = true;
-      const dir = dx > 0 ? 1 : -1;
-      ptr.ax += dir * st;
-      move(dir, 0);
-    }
-  });
-  function endPtr(e, cancel) {
-    if (!ptr || e.pointerId !== ptr.id) return;
-    const dx = e.clientX - ptr.x0, dy = e.clientY - ptr.y0, side = ptr.side;
-    ptr = null;
-    if (cancel || side) return;
-    const st = stepPx();
-    if (dy < -st && -dy > Math.abs(dx)) move(0, -1);       // arrastou para cima: volta
-    else if (Math.abs(dx) < st && Math.abs(dy) < st * 1.6) move(0, 1); // toque: pula para a frente
-  }
-  cv.addEventListener("pointerup", (e) => endPtr(e, false));
-  cv.addEventListener("pointercancel", (e) => endPtr(e, true));
   document.addEventListener("keydown", (e) => {
     const k = e.key;
     if (state !== "play") { if ((k === "Enter" || k === " ") && state === "menu") { e.preventDefault(); startGame(); } return; }
