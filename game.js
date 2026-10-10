@@ -781,8 +781,11 @@
     if (r.smallT > 0) top *= 0.62;
     r.off = Math.abs(r.x) > 1.06 && r.jumpH <= 0;
     if (r.off && r.starT <= 0 && r.boostT <= 0) top *= 0.5;
+    // no controle, X é o acelerador: soltou, o carrinho desliza até parar
+    let coast = false;
+    if (control && pad.on && !pad.gas) { top = 0; coast = true; }
     if (r.spinT > 0) top = 5;
-    const a = r.speed < top ? (r.boostT > 0 ? 0.09 : 0.025) : 0.05;
+    const a = coast ? 0.03 : r.speed < top ? (r.boostT > 0 ? 0.09 : 0.025) : 0.05;
     r.speed += (top - r.speed) * Math.min(1, a * dt);
     r.z += r.speed * dt;
 
@@ -2073,6 +2076,7 @@
 
   window.addEventListener("keydown", (e) => {
     const k = e.key;
+    pad.on = false;
     if (k === "ArrowLeft" || k === "a") keyL = true;
     else if (k === "ArrowRight" || k === "d") keyR = true;
     else if (k === " " || k === "ArrowUp" || k === "x") {
@@ -2096,15 +2100,15 @@
   pauseBtn.addEventListener("click", pause);
 
   /* ---------------- Controle (joystick PS4/Xbox/genérico) ----------- */
-  // Analógico esquerdo ou setinhas = direção; X / Quadrado / R1 / R2 = item;
-  // Options/Start = pausa. O navegador só "enxerga" o controle depois do
+  // Analógico esquerdo ou setinhas = direção; X ou R2 = acelerar (segurar);
+  // Bolinha ou R1 = jogar o item; Options/Start = pausa. O navegador só "enxerga" o controle depois do
   // primeiro botão apertado com a aba em foco.
-  const pad = { l: false, r: false, ax: 0, prev: [] };
+  const pad = { l: false, r: false, ax: 0, gas: false, on: false, prev: [] };
   function pollPad() {
     const list = navigator.getGamepads ? navigator.getGamepads() : [];
     let gp = null;
     for (const g of list) if (g && g.connected) { gp = g; break; }
-    if (!gp) { pad.l = pad.r = false; pad.ax = 0; return; }
+    if (!gp) { pad.l = pad.r = pad.gas = pad.on = false; pad.ax = 0; return; }
     const b = (i) => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5));
     let ax = gp.axes[0] || 0;
     if (Math.abs(ax) < 0.25) ax = 0;
@@ -2112,12 +2116,14 @@
     pad.l = b(14); pad.r = b(15);
     const now = gp.buttons.map((x, i) => b(i));
     const hit = (i) => now[i] && !pad.prev[i];
-    if (hit(0) || hit(2) || hit(5) || hit(7)) {
+    pad.gas = b(0) || b(7);
+    if (now.some((v) => v) || ax) pad.on = true;
+    if (hit(1) || hit(5)) {
       if (state === "race" && !secret) useItem(player);
       ensureAudio();
       onPress();
     }
-    if (hit(1) || hit(3)) { ensureAudio(); onPress(); }
+    if (hit(0) || hit(7) || hit(2) || hit(3)) { ensureAudio(); onPress(); }
     if (hit(9)) { if (state === "pause") resume(); else if (state === "race" || state === "count") pause(); }
     pad.prev = now;
   }
