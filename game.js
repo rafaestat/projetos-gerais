@@ -239,7 +239,12 @@
       try {
         AC = new (window.AudioContext || window.webkitAudioContext)();
         master = AC.createGain();
-        master.connect(AC.destination);
+        // limitador: muitos sons juntos (quadrada/serra) estouravam e distorciam
+        const lim = AC.createDynamicsCompressor();
+        lim.threshold.value = -12; lim.knee.value = 6; lim.ratio.value = 12;
+        lim.attack.value = 0.003; lim.release.value = 0.15;
+        master.connect(lim);
+        lim.connect(AC.destination);
         musicBus = AC.createGain();
         musicBus.gain.value = 0.5;
         musicBus.connect(master);
@@ -255,7 +260,7 @@
     if (AC && AC.state === "suspended") AC.resume().catch(() => {});
   }
   function applyMute() {
-    if (master) master.gain.value = save.muted ? 0 : 1;
+    if (master) master.gain.value = save.muted ? 0 : 0.8;
     muteBtn.textContent = save.muted ? "🔇" : "🔊";
   }
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -364,7 +369,7 @@
     const S = SONGS[music.song];
     const step = 60 / (S.bpm * music.tempo) / 2;
     if (music.next < AC.currentTime - 0.1) music.next = AC.currentTime + 0.03;
-    while (music.next < AC.currentTime + 0.2) {
+    while (music.next < AC.currentTime + 0.35) {
       const i = music.step % S.lead.length, t = music.next;
       if (S.lead[i]) osc(t, mtof(S.lead[i]), step * 0.9, S.wave, S.vol, 0, musicBus);
       if (S.bass[i]) osc(t, mtof(S.bass[i]), step * 1.6, "triangle", 0.12, 0, musicBus);
@@ -972,8 +977,9 @@
     raceT += dt;
     const racing = state === "race";
     if (racing) {
-      if (keyL) targetNX -= 0.04 * dt;
-      if (keyR) targetNX += 0.04 * dt;
+      if (keyL || pad.l) targetNX -= 0.04 * dt;
+      if (keyR || pad.r) targetNX += 0.04 * dt;
+      if (pad.ax) targetNX += pad.ax * 0.045 * dt;
       targetNX = clamp(targetNX, -1.35, 1.35);
       player.steerX = targetNX;
     } else {
@@ -2089,6 +2095,34 @@
   });
   pauseBtn.addEventListener("click", pause);
 
+  /* ---------------- Controle (joystick PS4/Xbox/genérico) ----------- */
+  // Analógico esquerdo ou setinhas = direção; X / Quadrado / R1 / R2 = item;
+  // Options/Start = pausa. O navegador só "enxerga" o controle depois do
+  // primeiro botão apertado com a aba em foco.
+  const pad = { l: false, r: false, ax: 0, prev: [] };
+  function pollPad() {
+    const list = navigator.getGamepads ? navigator.getGamepads() : [];
+    let gp = null;
+    for (const g of list) if (g && g.connected) { gp = g; break; }
+    if (!gp) { pad.l = pad.r = false; pad.ax = 0; return; }
+    const b = (i) => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5));
+    let ax = gp.axes[0] || 0;
+    if (Math.abs(ax) < 0.25) ax = 0;
+    pad.ax = ax;
+    pad.l = b(14); pad.r = b(15);
+    const now = gp.buttons.map((x, i) => b(i));
+    const hit = (i) => now[i] && !pad.prev[i];
+    if (hit(0) || hit(2) || hit(5) || hit(7)) {
+      if (state === "race" && !secret) useItem(player);
+      ensureAudio();
+      onPress();
+    }
+    if (hit(1) || hit(3)) { ensureAudio(); onPress(); }
+    if (hit(9)) { if (state === "pause") resume(); else if (state === "race" || state === "count") pause(); }
+    pad.prev = now;
+  }
+  window.addEventListener("gamepadconnected", () => { ensureAudio(); });
+
   /* ---------------- Telas ------------------------------------------- */
   const screens = { title: $("title-screen"), setup: $("setup-screen"), track: $("track-screen"), results: $("results-screen"), pause: $("pause-screen") };
   function show(name) { for (const k in screens) screens[k].classList.toggle("hidden", k !== name); }
@@ -3081,6 +3115,7 @@
     const dt = Math.min((t - lastT) / 16.667, 3) || 1;
     lastT = t;
     nowMs = t;
+    try { pollPad(); } catch (e) { /* sem controle, segue o jogo */ }
     try {
       if (state === "travel") { updateTravel(dt); if (travel) drawTravel(); syncButtons(); requestAnimationFrame(loop); return; }
       if (state === "party") { updateParty(dt); updateFx(dt); if (party) drawParty(); else draw(); syncButtons(); requestAnimationFrame(loop); return; }
