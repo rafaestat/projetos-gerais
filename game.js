@@ -1758,6 +1758,7 @@
     ctx.fill();
   }
 
+  let speedoV = 0;
   function drawHUD() {
     if (!(state === "race" || state === "count" || state === "finish" || state === "pause")) return;
     const u = Math.min(W, H), fs = clamp(u * 0.05, 15, 28);
@@ -1793,6 +1794,53 @@
       const p = player.rank, size = u * 0.15 * (1 + Math.max(0, posPop) * 0.02);
       const col = p === 1 ? "#ffd23f" : p === 2 ? "#e4ebf2" : p === 3 ? "#f0a35e" : "#8fd3ff";
       outlined(p + "º", W - 16, H - size * 0.62 - 10, size, col, "#2b1d4a", "right");
+    }
+
+    // velocímetro (canto direito, acima da posição)
+    {
+      const kmh = Math.max(0, player.speed * 2);
+      speedoV += (kmh - speedoV) * 0.25;
+      const R = clamp(u * 0.11, 40, 78);
+      const cxS = W - 16 - R * 1.1;
+      const cyS = H - u * 0.15 * 1.6 - 14 - R * 1.12;
+      const MAX = 200, a0 = Math.PI * 0.75, sw = Math.PI * 1.5;
+      ctx.save();
+      ctx.fillStyle = "rgba(20,14,40,0.55)";
+      circle(cxS, cyS, R * 1.12);
+      // faixa colorida: verde → amarelo → vermelho
+      const cols = ["#4cd964", "#4cd964", "#a8e04a", "#ffd23f", "#ff9f40", "#ff5d5d"];
+      ctx.lineWidth = R * 0.14;
+      ctx.lineCap = "butt";
+      for (let i = 0; i < cols.length; i++) {
+        ctx.strokeStyle = cols[i];
+        ctx.beginPath();
+        ctx.arc(cxS, cyS, R * 0.92, a0 + (sw * i) / cols.length, a0 + (sw * (i + 1)) / cols.length);
+        ctx.stroke();
+      }
+      // risquinhos a cada 20 km/h
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = Math.max(1.5, R * 0.035);
+      for (let v = 0; v <= MAX; v += 20) {
+        const a = a0 + (v / MAX) * sw, big = v % 40 === 0;
+        ctx.beginPath();
+        ctx.moveTo(cxS + Math.cos(a) * R * (big ? 0.62 : 0.7), cyS + Math.sin(a) * R * (big ? 0.62 : 0.7));
+        ctx.lineTo(cxS + Math.cos(a) * R * 0.8, cyS + Math.sin(a) * R * 0.8);
+        ctx.stroke();
+      }
+      // ponteiro
+      const an = a0 + (clamp(speedoV, 0, MAX) / MAX) * sw;
+      ctx.strokeStyle = player.boostT > 0 || player.starT > 0 ? "#ffd23f" : "#ff3b5c";
+      ctx.lineWidth = Math.max(3, R * 0.07);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(cxS - Math.cos(an) * R * 0.12, cyS - Math.sin(an) * R * 0.12);
+      ctx.lineTo(cxS + Math.cos(an) * R * 0.78, cyS + Math.sin(an) * R * 0.78);
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      circle(cxS, cyS, R * 0.1);
+      ctx.restore();
+      outlined(String(Math.round(speedoV)), cxS, cyS + R * 0.52, R * 0.36, player.boostT > 0 ? "#ffd23f" : "#ffffff");
+      outlined("km/h", cxS, cyS + R * 0.82, R * 0.2, "#d8e8ff");
     }
 
     // contagem regressiva com semáforo
