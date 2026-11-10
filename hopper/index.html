@@ -44,11 +44,13 @@
     .big-btn:focus-visible, .round-btn:focus-visible { outline: 4px solid #ffd23f; outline-offset: 3px; }
     .link-btn { font-size: clamp(15px, 4.2vw, 20px); font-weight: bold; color: #fff; background: rgba(0, 0, 0, 0.28);
       border-radius: 999px; padding: 9px 20px; text-decoration: none; }
-    .end-card { background: rgba(255, 255, 255, 0.94); border: 5px solid #fff; border-radius: 28px; padding: 22px 20px 26px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 360px; width: 100%; margin: auto 0; }
+    .end-card { background: rgba(255, 255, 255, 0.94); border: 5px solid #fff; border-radius: 28px; padding: 18px 20px 22px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 9px; max-width: 360px; width: 100%; margin: auto 0; }
     .end-card h1 { font-size: clamp(30px, 9vw, 46px); line-height: 1.05; color: #ff5d8f; }
     .end-card .sub { font-size: clamp(18px, 5vw, 24px); color: #2b1d4a; font-weight: bold; }
     .end-card .best { font-size: 16px; color: #7d44d6; }
+    .end-card .rating { font-size: clamp(34px, 11vw, 52px); line-height: 1; letter-spacing: 4px; color: #ffb400; }
+    .album { width: 100%; max-width: 320px; aspect-ratio: 320 / 96; background: #f3ecff; border-radius: 16px; }
 
     /* ---------- HUD ---------- */
     #hud { position: absolute; left: 0; right: 0; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px;
@@ -76,7 +78,7 @@
 </head>
 <body>
   <div id="wrap">
-    <canvas id="game" aria-label="Lara Hopper: toque para onde a Lara deve pular"></canvas>
+    <canvas id="game" aria-label="Lara Hopper: toque onde a Lara deve ir"></canvas>
 
     <div id="hud" class="hidden">
       <div class="pill" id="stars">⭐ 0</div>
@@ -101,7 +103,7 @@
         <div class="logo-sub">Caçada no labirinto dos dinos!</div>
       </div>
       <div class="bottom">
-        <p class="hint">Toque para onde a Lara deve pular 👆<br>Aperte 💥 para atirar nos dinos!<br>Lá em cima te espera o T-Rex gigante...</p>
+        <p class="hint">Toque onde a Lara deve ir 👆<br>Toque no dino (ou aperte 💥) para atirar!<br>Ache os ovos surpresa 🥚</p>
         <p class="pad-hint hidden" id="padHint">🎮 Controle ligado: aperte X para jogar</p>
         <button class="big-btn" id="play">JOGAR ▶</button>
         <a class="link-btn" href="../">🏎️ Corrida da Lara</a>
@@ -111,7 +113,9 @@
     <div id="end" class="screen hidden">
       <div class="end-card">
         <h1>Você derrotou o T-Rex! 🏆</h1>
+        <p class="rating" id="endRating">⭐⭐⭐</p>
         <p class="sub" id="endStars">⭐ 0   🦖 0</p>
+        <canvas id="album" class="album" aria-label="Álbum dos dinos derrotados"></canvas>
         <p class="best" id="endBest"></p>
         <button class="big-btn" id="again">JOGAR DE NOVO 🔄</button>
         <a class="link-btn" style="background:#4db5ff" href="../">🏎️ Corrida da Lara</a>

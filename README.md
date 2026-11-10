@@ -23,14 +23,19 @@ No computador: setas ← → para dirigir, espaço para usar item, P para pausar
 
 ## 🦖 Lara Hopper — Caçada no Labirinto (na pasta [`hopper/`](hopper/))
 
-Jogo de bloquinhos no estilo do *Jurassic Hopper 2*: a Lara (a mesma da corrida, de maria-chiquinha
-com lacinhos rosa) anda pulando por um labirinto de árvores, para cima, para baixo e para os lados,
-atirando nos dinossauros. Lá no alto dorme o **T-Rex gigante**, o chefão.
+Jogo de desenho animado inspirado no *Jurassic Hopper 2*: a Lara (a mesma da corrida, de maria-chiquinha
+com lacinhos rosa) anda pulando por um labirinto de árvores atirando estrelinhas nos dinossauros.
+Lá no alto dorme o **T-Rex gigante**, o chefão.
 Link: https://rafaestat.github.io/projetos-gerais/hopper/
 
-- **Toque na tela** na direção em que a Lara deve pular (setinhas em volta dela mostram para onde dá).
-- **Botão 💥 TIRO** (grande, do lado esquerdo): atira; segurando, atira sem parar. A mira é automática no dino mais perto.
-- Dino atingido **se despedaça em bloquinhos** ("POF!"); os maiores precisam de 2 ou 3 tiros. Às vezes deixam estrelinha.
+- **Toque onde a Lara deve ir:** ela acha o caminho e vai sozinha. **Segurar e arrastar** também anda
+  (um joystick aparece embaixo do dedo).
+- **Atirar:** tocar em cima do dino, ou o **botão 💥 TIRO** (segurando, atira sem parar). A mira é automática.
+- **Cada dino tem seu jeito:** o raptor corre em arrancadas; o T-Rex bebê persegue; o triceratops cisca o chão
+  e dá cabeçada (se bate na parede fica tonto); o estegossauro dorme até alguém chegar perto;
+  o pterodáctilo marca o chão com um círculo vermelho e mergulha.
+- **Recompensas:** ovos surpresa 🥚 (amiguinho que joga coraçõezinhos, super tiro 🌈, bolha 🛡️, ímã de estrelas 🧲),
+  combo ao derrotar dinos em sequência, nota de 1 a 3 estrelas e um álbum dos dinos derrotados.
 - No fim do labirinto, o **T-Rex gigante** acorda com o único rugido do jogo e aparece a barra de vida.
   São 20 tiros para derrubar. Se ele alcança a Lara: "NHAC!" e cospe ela de volta ("BLÉ!") — ninguém perde.
 - Dino que encosta só empurra a Lara ("Ai!").
